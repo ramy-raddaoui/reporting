@@ -29,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.apache.http.entity.StringEntity; 
 
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -49,9 +50,44 @@ import java.net.URL;
 public class APIController { 
 	
 	
+	public boolean delete_chart(int id)
+	{
+ 
+		String resultat = "";
+		try {
+		URL url = new URL("http://localhost:3000/api/card/"+id);
+		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+		conn.setDoOutput(true);
+		conn.setRequestMethod("DELETE");
+		conn.setRequestProperty("Content-Type", "application/json");
+		conn.setRequestProperty("X-Metabase-Session", "68a09086-0d96-4789-b85f-0932a466fb42");
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+				(conn.getInputStream())));
+
+		String output;
+		
+		while ((output = br.readLine()) != null) {
+			resultat=resultat+output;
+		}
+		System.out.println(resultat);
+
+		conn.disconnect();
+	  } catch (MalformedURLException e) {
+
+		e.printStackTrace();
+
+	  } catch (IOException e) {
+
+		e.printStackTrace();
+
+	 }
+		return true;
+
+	}
+	
+	
 	@PostMapping("/piechart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
-		System.out.println("data "+data);
 		JSONObject json_object = new JSONObject(data);
 		JSONObject json_object1= new JSONObject(json_object.get("data").toString());
 		String metrique= json_object1.getString("metrique");
@@ -59,12 +95,9 @@ public class APIController {
 		String param2= json_object1.getString("param2");
 		String seuil= json_object1.getString("seuil");
 
-		System.out.println("json metrique"+metrique);
  	String resultat="";
 	//param1=param1.replaceAll(" ","_");
 	//param2=param2.replaceAll(" ","_");
-	System.out.println("param1"+param1);
-	System.out.println("param2"+param2);
 	Hashtable<String,String> h = new Hashtable<String,String>();
 	h.put("nom intervenant","interv_full_name");
 	h.put("ventes par produit","vg_achievement_value_nb");
@@ -107,7 +140,7 @@ public class APIController {
 		   int ID_CARD=jsonobject.getInt("id");
 	
 	      String resultat_final=this.PiechartSofctwithParamsnew(ID_CARD).toString();
-	      System.out.println(resultat_final);
+	      //this.delete_chart(ID_CARD);
 	      //System.out.println(ID_CARD);
 	
 	       
@@ -131,7 +164,6 @@ public class APIController {
 	      
 	        HttpPost request = new HttpPost("http://localhost:3000/api/card/"+id+"/query");
 	        String inputJson = "{\"parameters\": [{\"type\": \"category\",\"target\": [\"variable\",[\"template-tag\",\"seuil\"]],\"value\": \"0\"}]}";
-	        		 System.out.println(inputJson);
 	        		 StringEntity stringEntity = null;
 					try {
 						stringEntity = new StringEntity(inputJson);
@@ -156,7 +188,6 @@ public class APIController {
 				e.printStackTrace();
 			}
 	   //     System.out.println(response.getStatusLine().getStatusCode());
-	        System.out.println("body"+body);
 	     //   JSONArray jsonArray = new JSONArray(body); 
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString()); 
