@@ -88,24 +88,49 @@ public class APIController {
 	
 	@PostMapping("/pieandhistchart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
+		Hashtable<String,String> h = new Hashtable<String,String>();
+		h.put("nom intervenant","interv_full_name");
+		h.put("ventes par produit","vg_achievement_value_nb");
+		h.put("objectif par produit","vg_target_value");
+		h.put("Rémunération par produit","vg_payment_value");
+		h.put("somme", "SUM"); 
 		JSONObject json_object = new JSONObject(data);
 		JSONObject json_object1= new JSONObject(json_object.get("data").toString());
 		String metrique= json_object1.getString("metrique");
 		String param1= json_object1.getString("param1");
-		String param2= json_object1.getString("param2");
+		JSONArray test_param2 = json_object1.getJSONArray("param2");
 		String seuil= json_object1.getString("seuil");
+
+		String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_");
+		
+		//SELECT Injecting Items Boucle
+		 JSONObject JSONObjItem = null;
+		  for (int i = 0; i < test_param2.length(); i++) 
+  		{
+		     JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());
+		    query+=" ,"+h.get(JSONObjItem.getString("metrique"))+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
+  		}
+		    query+="FROM commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING SUM(vg_achievement_value_nb)>"+seuil;
+		   System.out.println("query"+query);
+		    /*Group By Injecting Items Boucle
+			for (int i = 0; i < test_param2.length(); i++) 
+		  	{
+				  JSONObject JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());	
+				  query+=(i==0) ? " "+h.get(JSONObjItem.getString("nom")) : " ,"+h.get(JSONObjItem.getString("nom"));
+		  	}
+		  	*/
+			
+			//System.out.println(query_updated);
+		//String param2= json_object1.getString("param2");
 		String display=json_object1.getString("display");
-		System.out.println(display);
- 	String resultat="";
+		//System.out.println(display);
+ 	String resultat=""; 
 	//param1=param1.replaceAll(" ","_");
 	//param2=param2.replaceAll(" ","_");
-	Hashtable<String,String> h = new Hashtable<String,String>();
-	h.put("nom intervenant","interv_full_name");
-	h.put("ventes par produit","vg_achievement_value_nb");
-	h.put("Rémunération par produit","final_payment_value");
-	h.put("somme", "SUM"); 
-	String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_")+","+h.get(metrique)+"("+h.get(param2)+") AS "+param2.replaceAll(" ","_")+" from commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING "+h.get(metrique)+"("+h.get(param2)+")>"+seuil ;
-	System.out.println(query);
+
+	//query_updated+=  
+	//String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_")+","+h.get(metrique)+"("+h.get(param2)+") AS "+param2.replaceAll(" ","_")+" from commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING "+h.get(metrique)+"("+h.get(param2)+")>"+seuil ;
+//	System.out.println(query);
 	try {
 			  	
 				URL url = new URL("http://localhost:3000/api/card");
@@ -115,7 +140,7 @@ public class APIController {
 				conn.setRequestProperty("Content-Type", "application/json");
 				conn.setRequestProperty("X-Metabase-Session", "68a09086-0d96-4789-b85f-0932a466fb42");
 				//String input_marche_old = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\": \"SELECT c.interv_full_name as nom_intervenant , SUM(c.vg_achievement_value_nb) as Nombre_de_produits_vendus from commissions_fact_indiv as c GROUP BY c.interv_full_name having SUM(c.vg_achievement_value_nb)>0 \" },\"type\": \"native\" },\"display\": \"pie\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\"nom intervenant\"],\"graph.metrics\": [\"Nombre_de_produits_vendus\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
-				String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \""+display+"\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\""+param2+"\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
+				String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \""+display+"\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\"param2\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
 				OutputStream os = conn.getOutputStream();
 				os.write(input.getBytes());
 				os.flush();
@@ -141,7 +166,7 @@ public class APIController {
 		   JSONObject jsonobject = new JSONObject(resultat);
 		   int ID_CARD=jsonobject.getInt("id");
 	
-	      String resultat_final=this.PiechartSofctwithParamsnew(ID_CARD,display,param2).toString();
+	      String resultat_final=this.PiechartSofctwithParamsnew(ID_CARD,display,test_param2).toString();
 	      //this.delete_chart(ID_CARD);
 	      //System.out.println(ID_CARD);
 	
@@ -158,10 +183,10 @@ public class APIController {
     
 	
 //	@GetMapping("/test/sofct/params/{seuil}")
-	public JSONArray PiechartSofctwithParamsnew(int id,String display,String param2)
+	public JSONArray PiechartSofctwithParamsnew(int id,String display,JSONArray param2)
 	{
 	        
-
+		System.out.println(param2.toString());
 	        HttpClient httpClient = HttpClientBuilder.create().build();
 	      
 	        HttpPost request = new HttpPost("http://localhost:3000/api/card/"+id+"/query");
@@ -179,7 +204,7 @@ public class APIController {
 	        String body = null;
 	        HttpResponse response = null;
 			try {
-			
+
 				response = httpClient.execute(request);
 				 body = handler.handleResponse(response);
 			} catch (ClientProtocolException e) {
@@ -197,30 +222,38 @@ public class APIController {
 		        JSONArray jsonArrayResult = new JSONArray();
 		
 
-		        if (display.equals(new String("line")))
+		        if (display.equals(new String("line")) || display.equals(new String("area")))
 		        {
-		            JSONObject jsonObj = new JSONObject();
-				    jsonObj.put("name",param2);
-		        	JSONArray series = new JSONArray();
+		  		  for (int j = 0; j < param2.length(); j++) 
+		  		  {
+		  		    JSONObject JSONObjItem = new JSONObject(param2.getJSONObject(j).toString());
+		  		    JSONObject jsonObj = new JSONObject();
+					jsonObj.put("name",JSONObjItem.getString("nom"));
+			    	JSONArray series = new JSONArray();
 		    	    for (int i = 0; i < jsonArray.length(); i++) 
 		    		{
 		    	 JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
 				    JSONObject jsonObjInSeries = new JSONObject();
+			//	    System.out.println("jsonArrayItem.get(0)"+jsonArrayItem.get(0));
+				//    System.out.println("jsonArrayItem.get("+(j+1)+")"+jsonArrayItem.get(j+1));
 				    jsonObjInSeries.put("name",jsonArrayItem.get(0));
-				    jsonObjInSeries.put("value",jsonArrayItem.get(1));
+				    jsonObjInSeries.put("value",jsonArrayItem.get(j+1));
 				    series.put(jsonObjInSeries);	
-				 
-		        }
+		    		}
 		    	    jsonObj.put("series",series);
 				    jsonArrayResult.put(jsonObj);
+		  		  }
+		  		  System.out.println(jsonArrayResult.toString());
+		            
+
 		        }
 		        else
 		        {
-		        	
+			    	 System.out.println("ICI DANS ELSE");
+
 			for (int i = 0; i < jsonArray.length(); i++) {
 			    JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
 			    JSONObject jsonObj = new JSONObject();
-			  //^^^^^^^^^^^^^^^^^^^^^^^^^^^ add this line
 			    jsonObj.put("name",jsonArrayItem.get(0));
 			    jsonObj.put("value",jsonArrayItem.get(1));
 			    jsonArrayResult.put(jsonObj);
