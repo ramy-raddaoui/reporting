@@ -86,7 +86,7 @@ public class APIController {
 	}
 	
 	
-	@PostMapping("/piechart")
+	@PostMapping("/pieandhistchart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
 		JSONObject json_object = new JSONObject(data);
 		JSONObject json_object1= new JSONObject(json_object.get("data").toString());
@@ -94,16 +94,18 @@ public class APIController {
 		String param1= json_object1.getString("param1");
 		String param2= json_object1.getString("param2");
 		String seuil= json_object1.getString("seuil");
-
+		String display=json_object1.getString("display");
+		System.out.println(display);
  	String resultat="";
 	//param1=param1.replaceAll(" ","_");
 	//param2=param2.replaceAll(" ","_");
 	Hashtable<String,String> h = new Hashtable<String,String>();
 	h.put("nom intervenant","interv_full_name");
 	h.put("ventes par produit","vg_achievement_value_nb");
+	h.put("Rémunération par produit","final_payment_value");
 	h.put("somme", "SUM"); 
 	String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_")+","+h.get(metrique)+"("+h.get(param2)+") AS "+param2.replaceAll(" ","_")+" from commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING "+h.get(metrique)+"("+h.get(param2)+")>"+seuil ;
-
+	System.out.println(query);
 	try {
 			  	
 				URL url = new URL("http://localhost:3000/api/card");
@@ -113,7 +115,7 @@ public class APIController {
 				conn.setRequestProperty("Content-Type", "application/json");
 				conn.setRequestProperty("X-Metabase-Session", "68a09086-0d96-4789-b85f-0932a466fb42");
 				//String input_marche_old = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\": \"SELECT c.interv_full_name as nom_intervenant , SUM(c.vg_achievement_value_nb) as Nombre_de_produits_vendus from commissions_fact_indiv as c GROUP BY c.interv_full_name having SUM(c.vg_achievement_value_nb)>0 \" },\"type\": \"native\" },\"display\": \"pie\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\"nom intervenant\"],\"graph.metrics\": [\"Nombre_de_produits_vendus\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
-				String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \"pie\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\""+param2+"\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
+				String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \""+display+"\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\""+param2+"\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
 				OutputStream os = conn.getOutputStream();
 				os.write(input.getBytes());
 				os.flush();
@@ -139,7 +141,7 @@ public class APIController {
 		   JSONObject jsonobject = new JSONObject(resultat);
 		   int ID_CARD=jsonobject.getInt("id");
 	
-	      String resultat_final=this.PiechartSofctwithParamsnew(ID_CARD).toString();
+	      String resultat_final=this.PiechartSofctwithParamsnew(ID_CARD,display,param2).toString();
 	      //this.delete_chart(ID_CARD);
 	      //System.out.println(ID_CARD);
 	
@@ -156,7 +158,7 @@ public class APIController {
     
 	
 //	@GetMapping("/test/sofct/params/{seuil}")
-	public JSONArray PiechartSofctwithParamsnew(int id)
+	public JSONArray PiechartSofctwithParamsnew(int id,String display,String param2)
 	{
 	        
 
@@ -193,7 +195,28 @@ public class APIController {
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString()); 
 		      //  System.out.println("rows"+jsonArray.toString());
 		        JSONArray jsonArrayResult = new JSONArray();
+		
 
+		        if (display.equals(new String("line")))
+		        {
+		            JSONObject jsonObj = new JSONObject();
+				    jsonObj.put("name",param2);
+		        	JSONArray series = new JSONArray();
+		    	    for (int i = 0; i < jsonArray.length(); i++) 
+		    		{
+		    	 JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
+				    JSONObject jsonObjInSeries = new JSONObject();
+				    jsonObjInSeries.put("name",jsonArrayItem.get(0));
+				    jsonObjInSeries.put("value",jsonArrayItem.get(1));
+				    series.put(jsonObjInSeries);	
+				 
+		        }
+		    	    jsonObj.put("series",series);
+				    jsonArrayResult.put(jsonObj);
+		        }
+		        else
+		        {
+		        	
 			for (int i = 0; i < jsonArray.length(); i++) {
 			    JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
 			    JSONObject jsonObj = new JSONObject();
@@ -203,6 +226,7 @@ public class APIController {
 			    jsonArrayResult.put(jsonObj);
 			 //   System.out.println("Test dans boucle "+i+ " "+ jsonArrayItem.get(0));
 			}
+		        }
 	
 		     return jsonArrayResult;
 	    }
