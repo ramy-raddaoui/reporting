@@ -93,7 +93,13 @@ public class APIController {
 		h.put("ventes par produit","vg_achievement_value_nb");
 		h.put("objectif par produit","vg_target_value");
 		h.put("Rémunération par produit","vg_payment_value");
+		h.put("Nom du produit","commer_obj_line_name");
+		h.put("Rémunération finale","final_payment_value");
+		h.put("boutique","interv_dse_name");
+		h.put("date début","start_period");
+		h.put("date fin","end_period");
 		h.put("somme", "SUM"); 
+		h.put("moyenne", "AVG"); 
 		JSONObject json_object = new JSONObject(data);
 		JSONObject json_object1= new JSONObject(json_object.get("data").toString());
 		String metrique= json_object1.getString("metrique");
@@ -110,8 +116,9 @@ public class APIController {
 		     JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());
 		    query+=" ,"+h.get(JSONObjItem.getString("metrique"))+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
   		}
-		    query+="FROM commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING SUM(vg_achievement_value_nb)>"+seuil;
-		   System.out.println("query"+query);
+		    query+="FROM commissions_fact_indiv GROUP BY "+h.get(param1);
+		    query="SELECT interv_dse_name AS nom_boutique ,commer_obj_line_name AS nom_produit,SUM(final_payment_value) AS rémunération_vendeurs_all FROM commissions_fact_indiv GROUP BY interv_dse_name,commer_obj_line_name ORDER BY interv_dse_name , commer_obj_line_name";
+		//   System.out.println("query"+query);
 		    /*Group By Injecting Items Boucle
 			for (int i = 0; i < test_param2.length(); i++) 
 		  	{
@@ -165,7 +172,7 @@ public class APIController {
 			 }
 		   JSONObject jsonobject = new JSONObject(resultat);
 		   int ID_CARD=jsonobject.getInt("id");
-	
+		   System.out.println("TEST PARAM2"+test_param2.toString());
 	      String resultat_final=this.PiechartSofctwithParamsnew(ID_CARD,display,test_param2).toString();
 	      //this.delete_chart(ID_CARD);
 	      //System.out.println(ID_CARD);
@@ -218,50 +225,64 @@ public class APIController {
 	     //   JSONArray jsonArray = new JSONArray(body); 
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString()); 
-		      //  System.out.println("rows"+jsonArray.toString());
+		       // System.out.println("rows"+jsonArray.toString());
 		        JSONArray jsonArrayResult = new JSONArray();
-		
+		        	
 
 		        if (display.equals(new String("line")) || display.equals(new String("area")))
 		        {
-		  		  for (int j = 0; j < param2.length(); j++) 
-		  		  {
-		  		    JSONObject JSONObjItem = new JSONObject(param2.getJSONObject(j).toString());
-		  		    JSONObject jsonObj = new JSONObject();
-					jsonObj.put("name",JSONObjItem.getString("nom"));
-			    	JSONArray series = new JSONArray();
-		    	    for (int i = 0; i < jsonArray.length(); i++) 
-		    		{
-		    	 JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
-				    JSONObject jsonObjInSeries = new JSONObject();
-			//	    System.out.println("jsonArrayItem.get(0)"+jsonArrayItem.get(0));
-				//    System.out.println("jsonArrayItem.get("+(j+1)+")"+jsonArrayItem.get(j+1));
-				    jsonObjInSeries.put("name",jsonArrayItem.get(0));
-				    jsonObjInSeries.put("value",jsonArrayItem.get(j+1));
-				    series.put(jsonObjInSeries);	
-		    		}
-		    	    jsonObj.put("series",series);
-				    jsonArrayResult.put(jsonObj);
-		  		  }
-		  		  System.out.println(jsonArrayResult.toString());
-		            
+		        	//System.out.println(param2.toString());
+		       // 	System.out.println("jsonArray toString()"+jsonArray.toString());
+		        	int i=0;
+		        	while (i<(jsonArray.length()-1))
+		        	{
+		        		JSONObject jsonObj = new JSONObject();
+		        		JSONArray  MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
+		        		JSONArray  MyArrayItemNext=new JSONArray(jsonArray.getJSONArray(i+1).toString());
+		        	//   	System.out.println("MyArrayItemNext"+MyArrayItemNext.toString());
+		        		String X;
+		        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
+		        			 X="";
+		        		 else
+		        		 X=(String) MyArrayItem.get(0);
+		        		 
+			    	    jsonObj.put("name",X);
+				  		JSONArray series = new JSONArray();
+				  		String xNext;
+		        		 if (JSONObject.NULL.equals(MyArrayItemNext.get(0)))
+			        		 xNext="";	 
+			        		 else 
+			        		 xNext=(String) MyArrayItemNext.get(0);
+					    
+				  		while (X.equals(xNext))
+				  		{
+				  			JSONObject jsonObjInSeries = new JSONObject();
+				  			jsonObjInSeries.put("name", MyArrayItemNext.getString(1));
+				  			jsonObjInSeries.put("value", MyArrayItemNext.getNumber(2));
+				  			series.put(jsonObjInSeries);
+				  			 i++;
+				  			 if (i==(jsonArray.length()-1))break;
+				  			 MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
+			        		 MyArrayItemNext=new JSONArray(jsonArray.getJSONArray(i+1).toString());
+			        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
+			        			 X="";
+			        		 else
+			        		 X=(String) MyArrayItem.get(0);
+			        		 if (JSONObject.NULL.equals(MyArrayItemNext.get(0)))
+				        		 xNext="";	 
+				        	else 
+				        	xNext=(String) MyArrayItemNext.get(0);
+			    
+			        		
+				  		}
+				  		jsonObj.put("series",series);
+				  		jsonArrayResult.put(jsonObj);
+				  		i++;
+			  			 if (i==(jsonArray.length()))break;
 
+		        	}
 		        }
-		        else
-		        {
-			    	 System.out.println("ICI DANS ELSE");
-
-			for (int i = 0; i < jsonArray.length(); i++) {
-			    JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
-			    JSONObject jsonObj = new JSONObject();
-			    jsonObj.put("name",jsonArrayItem.get(0));
-			    jsonObj.put("value",jsonArrayItem.get(1));
-			    jsonArrayResult.put(jsonObj);
-			 //   System.out.println("Test dans boucle "+i+ " "+ jsonArrayItem.get(0));
-			}
-		        }
-	
-		     return jsonArrayResult;
+		     		     return jsonArrayResult;
 	    }
 	   
 	
