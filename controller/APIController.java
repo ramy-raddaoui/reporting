@@ -111,13 +111,26 @@ public class APIController {
 		
 		//SELECT Injecting Items Boucle
 		 JSONObject JSONObjItem = null;
+		 String Group_By_Elements="";
+		 String Order_By_Elements=h.get(param1)+" ";
 		  for (int i = 0; i < test_param2.length(); i++) 
   		{
 		     JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());
-		    query+=" ,"+h.get(JSONObjItem.getString("metrique"))+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
+		     System.out.println("JSONObjItem"+JSONObjItem);
+		     if (JSONObjItem.getString("metrique").equals(new String("GB")))
+		     {
+		     query+=" ,"+h.get(JSONObjItem.getString("nom"))+" AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" " ; 
+	    	 Group_By_Elements=" ,"+h.get(JSONObjItem.getString("nom"))+" ";
+
+		     }
+		     else
+		     {
+		    	 query+= " ,"+h.get(JSONObjItem.getString("metrique"))+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
+		     }
   		}
-		    query+="FROM commissions_fact_indiv GROUP BY "+h.get(param1);
-		    query="SELECT interv_dse_name AS nom_boutique ,commer_obj_line_name AS nom_produit,SUM(final_payment_value) AS rémunération_vendeurs_all FROM commissions_fact_indiv GROUP BY interv_dse_name,commer_obj_line_name ORDER BY interv_dse_name , commer_obj_line_name";
+		    Order_By_Elements+=Group_By_Elements;
+		    query+="FROM commissions_fact_indiv GROUP BY "+h.get(param1)+Group_By_Elements+" "+"ORDER BY "+Order_By_Elements;
+		   // query="SELECT interv_dse_name AS nom_boutique ,commer_obj_line_name AS nom_produit,SUM(final_payment_value) AS rémunération_vendeurs_all FROM commissions_fact_indiv GROUP BY interv_dse_name,commer_obj_line_name ORDER BY interv_dse_name , commer_obj_line_name";
 		//   System.out.println("query"+query);
 		    /*Group By Injecting Items Boucle
 			for (int i = 0; i < test_param2.length(); i++) 
@@ -225,14 +238,11 @@ public class APIController {
 	     //   JSONArray jsonArray = new JSONArray(body); 
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString()); 
-		       //System.out.println("rows"+jsonArray.toString());
 		        JSONArray jsonArrayResult = new JSONArray();
 		        	
 
-		        if (display.equals(new String("line")) || display.equals(new String("area")))
+		        if (display.equals(new String("line")) || display.equals(new String("area")) || display.equals(new String("stackv")))
 		        {
-		        	//System.out.println(param2.toString());
-		       // 	System.out.println("jsonArray toString()"+jsonArray.toString());
 		        	int i=0;
 		        	String X_FINALE = null;
 		        	while (i<(jsonArray.length()-1))
@@ -243,7 +253,7 @@ public class APIController {
 		        	//   	System.out.println("MyArrayItemNext"+MyArrayItemNext.toString());
 		        		String X;
 		        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
-		        			 X="";
+		        			 X="Others";
 		        		 else
 		        		 X=(String) MyArrayItem.get(0);
 		        		 
@@ -251,18 +261,25 @@ public class APIController {
 				  		JSONArray series = new JSONArray();
 				  		String xNext;
 		        		 if (JSONObject.NULL.equals(MyArrayItemNext.get(0)))
-			        		 xNext="";	 
+			        		 xNext="Others";	 
 			        		 else 
 			        		 xNext=(String) MyArrayItemNext.get(0);
 		        			JSONObject jsonObjInSeries_debut = new JSONObject();
+		        			//System.out.println(" MyArrayItem.getString(1)"+ MyArrayItem.getString(1));
 		        			jsonObjInSeries_debut.put("name", MyArrayItem.getString(1));
+		        			//System.out.println(" MyArrayItem.getNumber(2)"+ MyArrayItem.getNumber(2));
 		        			jsonObjInSeries_debut.put("value", MyArrayItem.getNumber(2));
 				  			series.put(jsonObjInSeries_debut);
+				  		//	System.out.println(jsonObjInSeries_debut);
 				  		while (X.equals(xNext))
 				  		{
+				  			System.out.println("while (X.equals(xNext))");
 				  			JSONObject jsonObjInSeries = new JSONObject();
-				  			jsonObjInSeries.put("name", MyArrayItemNext.getString(1));
+				  			String name=(JSONObject.NULL.equals(MyArrayItemNext.get(1)))?"Others":(String) MyArrayItemNext.get(1);
+
+				  			jsonObjInSeries.put("name", name);
 				  			jsonObjInSeries.put("value", MyArrayItemNext.getNumber(2));
+				  			System.out.println(jsonObjInSeries.toString());
 				  			series.put(jsonObjInSeries);
 				  			 i++;
 				  			 if (i==(jsonArray.length()-1))
@@ -274,7 +291,8 @@ public class APIController {
 				        		 X_FINALE=(String) MyArrayItem.get(0);
 				  				 if (X.equals(X_FINALE))
 				  				 {
-				  					jsonObjInSeries.put("name", MyArrayItem.getString(1));
+				  					 String namefinal=(JSONObject.NULL.equals(MyArrayItem.get(1)))?"Others":(String) MyArrayItem.get(1);
+				  					jsonObjInSeries.put("name", namefinal);
 						  			jsonObjInSeries.put("value", MyArrayItem.getNumber(2));
 						  			series.put(jsonObjInSeries);
 						  		//	System.out.println("jsonObjInSeries.toString() DANS IF"+jsonObjInSeries.toString());
@@ -304,22 +322,23 @@ public class APIController {
 				  				 MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
 				        		 MyArrayItemNext=new JSONArray(jsonArray.getJSONArray(i+1).toString());
 				        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
-				        			 X="";
+				        			 X="Others";
 				        		 else
 				        		 X=(String) MyArrayItem.get(0);
 				        		 if (JSONObject.NULL.equals(MyArrayItemNext.get(0)))
-					        		 xNext="";	 
+					        		 xNext="Others";	 
 					        	else 
 					        	xNext=(String) MyArrayItemNext.get(0); 
 				  			 }
 				  			
 				  		}
 				  		jsonObj.put("series",series);
-				  		System.out.println("jsonObj"+jsonObj);
+				  	//	System.out.println("jsonObj"+jsonObj);
 				  		jsonArrayResult.put(jsonObj);
 				  		i++;
 		        	}
 		        }
+		        		System.out.println("resultat final"+jsonArrayResult);
 		     		     return jsonArrayResult;
 	    }
 	   
