@@ -225,7 +225,7 @@ public class APIController {
 	     //   JSONArray jsonArray = new JSONArray(body); 
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString()); 
-		       // System.out.println("rows"+jsonArray.toString());
+		       //System.out.println("rows"+jsonArray.toString());
 		        JSONArray jsonArrayResult = new JSONArray();
 		        	
 
@@ -234,6 +234,7 @@ public class APIController {
 		        	//System.out.println(param2.toString());
 		       // 	System.out.println("jsonArray toString()"+jsonArray.toString());
 		        	int i=0;
+		        	String X_FINALE = null;
 		        	while (i<(jsonArray.length()-1))
 		        	{
 		        		JSONObject jsonObj = new JSONObject();
@@ -261,25 +262,58 @@ public class APIController {
 				  			jsonObjInSeries.put("value", MyArrayItemNext.getNumber(2));
 				  			series.put(jsonObjInSeries);
 				  			 i++;
-				  			 if (i==(jsonArray.length()-1))break;
-				  			 MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
-			        		 MyArrayItemNext=new JSONArray(jsonArray.getJSONArray(i+1).toString());
-			        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
-			        			 X="";
-			        		 else
-			        		 X=(String) MyArrayItem.get(0);
-			        		 if (JSONObject.NULL.equals(MyArrayItemNext.get(0)))
-				        		 xNext="";	 
-				        	else 
-				        	xNext=(String) MyArrayItemNext.get(0);
-			    
-			        		
+				  			 if (i==(jsonArray.length()-1))
+				  			 {
+				  				 MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
+				  				 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
+				  					X_FINALE="Others";
+				        		 else
+				        		 X_FINALE=(String) MyArrayItem.get(0);
+				  				 if (X.equals(X_FINALE))
+				  				 {
+				  					jsonObjInSeries.put("name", MyArrayItem.getString(1));
+						  			jsonObjInSeries.put("value", MyArrayItem.getNumber(2));
+						  			series.put(jsonObjInSeries);
+						  		//	System.out.println("jsonObjInSeries.toString() DANS IF"+jsonObjInSeries.toString());
+
+				  				 }
+				  				 else
+				  				 {
+				  					String X1;
+					        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
+					        			 X1="Others";
+					        		 else
+					        			 X1=(String) MyArrayItem.get(0);
+					        		 
+						    	    jsonObj.put("name",X1);
+							  		JSONArray series1 = new JSONArray();
+							  		JSONObject jsonObjInSeries1 = new JSONObject();
+							  		jsonObjInSeries1.put("name", MyArrayItemNext.getString(1));
+							  		jsonObjInSeries1.put("value", MyArrayItemNext.getNumber(2));
+						  			series.put(jsonObjInSeries1);
+						  		//	System.out.println("jsonObjInSeries1.toString() DANS ELSE"+jsonObjInSeries1.toString());
+				  				 }
+				  					 
+				  				break;	 
+				  			 }
+				  			 else
+				  			 {
+				  				 MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
+				        		 MyArrayItemNext=new JSONArray(jsonArray.getJSONArray(i+1).toString());
+				        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
+				        			 X="";
+				        		 else
+				        		 X=(String) MyArrayItem.get(0);
+				        		 if (JSONObject.NULL.equals(MyArrayItemNext.get(0)))
+					        		 xNext="";	 
+					        	else 
+					        	xNext=(String) MyArrayItemNext.get(0); 
+				  			 }
+				  			
 				  		}
 				  		jsonObj.put("series",series);
 				  		jsonArrayResult.put(jsonObj);
 				  		i++;
-			  			 if (i==(jsonArray.length()))break;
-
 		        	}
 		        }
 		     		     return jsonArrayResult;
