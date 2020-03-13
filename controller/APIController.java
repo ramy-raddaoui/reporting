@@ -254,7 +254,10 @@ public class APIController {
 			        		 xNext="";	 
 			        		 else 
 			        		 xNext=(String) MyArrayItemNext.get(0);
-					    
+		        			JSONObject jsonObjInSeries_debut = new JSONObject();
+		        			jsonObjInSeries_debut.put("name", MyArrayItem.getString(1));
+		        			jsonObjInSeries_debut.put("value", MyArrayItem.getNumber(2));
+				  			series.put(jsonObjInSeries_debut);
 				  		while (X.equals(xNext))
 				  		{
 				  			JSONObject jsonObjInSeries = new JSONObject();
