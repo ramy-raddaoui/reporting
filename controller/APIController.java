@@ -312,6 +312,7 @@ public class APIController {
 				  			
 				  		}
 				  		jsonObj.put("series",series);
+				  		System.out.println("jsonObj"+jsonObj);
 				  		jsonArrayResult.put(jsonObj);
 				  		i++;
 		        	}
