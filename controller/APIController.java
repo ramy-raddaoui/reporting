@@ -276,13 +276,13 @@ public class APIController {
 				  		//	System.out.println(jsonObjInSeries_debut);
 				  		while (X.equals(xNext))
 				  		{
-				  			System.out.println("while (X.equals(xNext))");
+				  		//	System.out.println("while (X.equals(xNext))");
 				  			JSONObject jsonObjInSeries = new JSONObject();
 				  			String name=(JSONObject.NULL.equals(MyArrayItemNext.get(1)))?"Others":(String) MyArrayItemNext.get(1);
 
 				  			jsonObjInSeries.put("name", name);
 				  			jsonObjInSeries.put("value", MyArrayItemNext.getNumber(2));
-				  			System.out.println(jsonObjInSeries.toString());
+				  		//	System.out.println(jsonObjInSeries.toString());
 				  			series.put(jsonObjInSeries);
 				  			 i++;
 				  			 if (i==(jsonArray.length()-1))
@@ -341,7 +341,23 @@ public class APIController {
 				  		i++;
 		        	}
 		        }
-		        		System.out.println("resultat final"+jsonArrayResult);
+		        else
+		        {
+		        	for (int i = 0; i < jsonArray.length()/2; i++) 
+		        	{
+					    JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
+					    JSONObject jsonObj = new JSONObject();
+					    if (jsonArrayItem.get(0).equals(null))
+					    	jsonObj.put("name","Others");
+					    else 
+					    jsonObj.put("name",jsonArrayItem.get(0));
+					   
+
+					    jsonObj.put("value",jsonArrayItem.get(1));
+					    jsonArrayResult.put(jsonObj);
+					}
+		        }
+		        	System.out.println("jsonArrayResult"+jsonArrayResult);
 		     		     return jsonArrayResult;
 	    }
 	   
