@@ -100,12 +100,14 @@ public class APIController {
 		h.put("date fin","end_period");
 		h.put("somme", "SUM"); 
 		h.put("moyenne", "AVG"); 
+		//JSONArray my_array = data.getJSONArray("param2");
+		System.out.println("This is first step "+data);
+
 		JSONObject json_object = new JSONObject(data);
 		JSONObject json_object1= new JSONObject(json_object.get("data").toString());
-		String metrique= json_object1.getString("metrique");
 		String param1= json_object1.getString("param1");
 		JSONArray test_param2 = json_object1.getJSONArray("param2");
-		String seuil= json_object1.getString("seuil");
+	//	String seuil= json_object1.getString("seuil");
 
 		String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_");
 		
@@ -266,7 +268,8 @@ public class APIController {
 			        		 xNext=(String) MyArrayItemNext.get(0);
 		        			JSONObject jsonObjInSeries_debut = new JSONObject();
 		        			//System.out.println(" MyArrayItem.getString(1)"+ MyArrayItem.getString(1));
-		        			jsonObjInSeries_debut.put("name", MyArrayItem.getString(1));
+		        			String name_debut=(JSONObject.NULL.equals( MyArrayItem.get(1)))?"Others":(String)  MyArrayItem.get(1);
+		        			jsonObjInSeries_debut.put("name", name_debut);
 		        			//System.out.println(" MyArrayItem.getNumber(2)"+ MyArrayItem.getNumber(2));
 		        			jsonObjInSeries_debut.put("value", MyArrayItem.getNumber(2));
 				  			series.put(jsonObjInSeries_debut);
