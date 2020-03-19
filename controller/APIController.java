@@ -117,7 +117,7 @@ public class APIController {
 		 JSONObject JSONObjItem = null;
 		 String Group_By_Elements="";
 		 String Order_By_Elements="";
-		 if (display.equals(new String("area"))==false)
+		 if (display.equals(new String("area"))==false && display.equals(new String("line"))==false)
 		 {
 			  Order_By_Elements=h.get(param1)+" ";
 		 }
@@ -141,7 +141,7 @@ public class APIController {
 	//	     System.out.println("JSONObjItem"+JSONObjItem);
 		    	 query+= " ,"+h.get(JSONObjItem.getString("metrique"))+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
   		}
-		  if (display.equals(new String("area"))==true)
+		  if (display.equals(new String("area"))==true || display.equals(new String("line"))==true)
 		    Order_By_Elements=last_GB;
 		    query+="FROM commissions_fact_indiv GROUP BY "+h.get(param1)+Group_By_Elements+" "+"ORDER BY "+Order_By_Elements;
 		    System.out.println("queryyy"+query);
@@ -164,7 +164,7 @@ public class APIController {
 
 	//query_updated+=  
 	//String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_")+","+h.get(metrique)+"("+h.get(param2)+") AS "+param2.replaceAll(" ","_")+" from commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING "+h.get(metrique)+"("+h.get(param2)+")>"+seuil ;
-//	System.out.println(query);
+	System.out.println(query);
 	try {
 			  	
 				URL url = new URL("http://localhost:3000/api/card");
@@ -220,7 +220,6 @@ public class APIController {
 	public JSONArray PiechartSofctwithParamsnew(int id,String display,JSONArray param2)
 	{
 	        
-		System.out.println(param2.toString());
 	        HttpClient httpClient = HttpClientBuilder.create().build();
 	      
 	        HttpPost request = new HttpPost("http://localhost:3000/api/card/"+id+"/query");
@@ -270,7 +269,7 @@ public class APIController {
 		        		//System.out.println("MyArrayItem"+MyArrayItem);
 		        		 for (int j=1;j<MyArrayItem.length()-2;j++)
 		        		 {
-		        			 System.out.println("i"+i);
+		        		//	 System.out.println("focus on this item"+MyArrayItem.get(j).toString());
 		        			// System.out.println("length"+jsonArray.length());
 		        			 //System.out.println();
 		        			 //System.out.println(j);
@@ -284,6 +283,9 @@ public class APIController {
 		        		 }
 		        		 else
 		        		 {
+		        			 if (display_group_by_names.equals(new String("")))
+			        			 jsonArraySortedItem.put(MyArrayItem.get(MyArrayItem.length()-2).toString());
+		        				 else
 		        			 jsonArraySortedItem.put(display_group_by_names+MyArrayItem.get(MyArrayItem.length()-2).toString());
 		        		 }
 		        	
@@ -300,9 +302,9 @@ public class APIController {
 		    
 		        		 jsonArraySortedFinal.put(jsonArraySortedItem);
 		        	}
-	        		 System.out.println("check this "+jsonArraySortedFinal);
+	        		// System.out.println("check this "+jsonArraySortedFinal);
 		        	jsonArray=jsonArraySortedFinal;
-		        	//System.out.println(jsonArraySortedFinal);
+		        	//System.out.println("jsonArraySortedFinal"+jsonArraySortedFinal);
 		        }
 		        if (display.equals(new String("line")) || display.equals(new String("area")) || display.equals(new String("stackv")))
 		        {
