@@ -105,6 +105,7 @@ public class APIController {
 
 		JSONObject json_object = new JSONObject(data);
 		JSONObject json_object1= new JSONObject(json_object.get("data").toString());
+		String display=json_object1.getString("display");
 		String param1= json_object1.getString("param1");
 		JSONArray test_param2 = json_object1.getJSONArray("param2");
 		JSONArray GroupByElements = json_object1.getJSONArray("GroupBy");
@@ -115,24 +116,35 @@ public class APIController {
 		//SELECT Injecting Items Boucle
 		 JSONObject JSONObjItem = null;
 		 String Group_By_Elements="";
-		 String Order_By_Elements=h.get(param1)+" ";
-		 String last_GB;
-		 System.out.println("GroupByElements"+GroupByElements);
+		 String Order_By_Elements="";
+		 if (display.equals(new String("area"))==false)
+		 {
+			  Order_By_Elements=h.get(param1)+" ";
+		 }
+		 String last_GB = "";
+		 
 		 for (int i=0;i<GroupByElements.length();i++)
 		 {
 		     JSONObjItem = new JSONObject(GroupByElements.getJSONObject(i).toString());
+		   
 		     query+=" ,"+h.get(JSONObjItem.getString("nom"))+" AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" " ; 
-	    	 Group_By_Elements=" ,"+h.get(JSONObjItem.getString("nom"))+" ";
+	    	 Group_By_Elements+=" ,"+h.get(JSONObjItem.getString("nom"))+" ";
 	    	 last_GB=h.get(JSONObjItem.getString("nom"));
 		 }
+//	     System.out.println("query version "+query);
+    	 System.out.println("Group_By_Elements"+Group_By_Elements);
+
+		// System.out.println("group by variaable "+Group_By_Elements);
 		  for (int i = 0; i < test_param2.length(); i++) 
   		{
 		     JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());
-		     System.out.println("JSONObjItem"+JSONObjItem);
+	//	     System.out.println("JSONObjItem"+JSONObjItem);
 		    	 query+= " ,"+h.get(JSONObjItem.getString("metrique"))+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
   		}
-		    Order_By_Elements+=Group_By_Elements;
+		  if (display.equals(new String("area"))==true)
+		    Order_By_Elements=last_GB;
 		    query+="FROM commissions_fact_indiv GROUP BY "+h.get(param1)+Group_By_Elements+" "+"ORDER BY "+Order_By_Elements;
+		    System.out.println("queryyy"+query);
 		   // query="SELECT interv_dse_name AS nom_boutique ,commer_obj_line_name AS nom_produit,SUM(final_payment_value) AS rémunération_vendeurs_all FROM commissions_fact_indiv GROUP BY interv_dse_name,commer_obj_line_name ORDER BY interv_dse_name , commer_obj_line_name";
 		//   System.out.println("query"+query);
 		    /*Group By Injecting Items Boucle
@@ -145,7 +157,6 @@ public class APIController {
 			
 			//System.out.println(query_updated);
 		//String param2= json_object1.getString("param2");
-		String display=json_object1.getString("display");
 		//System.out.println(display);
  	String resultat=""; 
 	//param1=param1.replaceAll(" ","_");
@@ -241,10 +252,53 @@ public class APIController {
 	     //   JSONArray jsonArray = new JSONArray(body); 
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString());
+		       
 		        System.out.println("jsonArray"+jsonArray);
 		        JSONArray jsonArrayResult = new JSONArray();
-		        	
+		        JSONArray jsonArraySortedFinal = new JSONArray();
 		        
+
+		        String first;
+		        if (display.equals(new String("area")) || display.equals(new String("line")) )
+		        {
+		        	for (int i=0;i<jsonArray.length();i++)
+		        	{
+		        		JSONArray  MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
+		        		JSONArray jsonArraySortedItem = new JSONArray();
+		        		//System.out.println("MyArrayItem"+MyArrayItem);
+		        		 if (JSONObject.NULL.equals(MyArrayItem.get(MyArrayItem.length()-2)))
+		        		 {
+		        			 jsonArraySortedItem.put("Others");
+		        		 }
+		        		 else
+		        		 {
+		        			 jsonArraySortedItem.put(MyArrayItem.get(MyArrayItem.length()-2).toString());
+		        		 }
+		        		 for (int j=1;j<MyArrayItem.length()-2;j++)
+		        		 {
+		        			// System.out.println("length"+jsonArray.length());
+		        			 //System.out.println();
+		        			 //System.out.println(j);
+		        			// System.out.println(MyArrayItem.get(j));
+			        		 jsonArraySortedItem.put(MyArrayItem.get(j).toString());
+
+		        		 }
+		        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
+		        		 {
+		        			 jsonArraySortedItem.put("Others");
+		        		 }
+		        		 else
+		        		 {
+			        		 jsonArraySortedItem.put(MyArrayItem.get(0).toString());
+
+		        		 }
+		        		 jsonArraySortedItem.put(MyArrayItem.get(MyArrayItem.length()-1));
+		    
+		        		 jsonArraySortedFinal.put(jsonArraySortedItem);
+		        	}
+		        	jsonArray=jsonArraySortedFinal;
+		        	//System.out.println(jsonArraySortedFinal);
+		        }
 		        if (display.equals(new String("line")) || display.equals(new String("area")) || display.equals(new String("stackv")))
 		        {
 		        	int i=0;
@@ -254,7 +308,7 @@ public class APIController {
 		        		JSONObject jsonObj = new JSONObject();
 		        		JSONArray  MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
 		        		JSONArray  MyArrayItemNext=new JSONArray(jsonArray.getJSONArray(i+1).toString());
-		        	//   	System.out.println("MyArrayItemNext"+MyArrayItemNext.toString());
+		        	  	//System.out.println("MyArrayItemNext"+MyArrayItemNext.toString());
 		        		String X;
 		        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
 		        			 X="Others";
@@ -357,7 +411,7 @@ public class APIController {
 					    jsonArrayResult.put(jsonObj);
 					}
 		        }
-		        	//System.out.println("jsonArrayResult"+jsonArrayResult);
+		        	System.out.println("jsonArrayResult"+jsonArrayResult);
 		     		     return jsonArrayResult;
 	    }
 	   
