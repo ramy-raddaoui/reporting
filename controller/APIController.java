@@ -262,19 +262,20 @@ public class APIController {
 		        System.out.println("displaaaay"+display);
 		        if (display.equals(new String("area")) || display.equals(new String("line")) )
 		        {
-		        	display_group_by_names="";
 		        	for (int i=0;i<jsonArray.length();i++)
 		        	{
+			        	display_group_by_names="";
 		        		JSONArray  MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
 		        		JSONArray jsonArraySortedItem = new JSONArray();
 		        		//System.out.println("MyArrayItem"+MyArrayItem);
 		        		 for (int j=1;j<MyArrayItem.length()-2;j++)
 		        		 {
+		        			 System.out.println("i"+i);
 		        			// System.out.println("length"+jsonArray.length());
 		        			 //System.out.println();
 		        			 //System.out.println(j);
 		        			// System.out.println(MyArrayItem.get(j));
-		        		//	 display_group_by_names+=" "+MyArrayItem.get(j).toString();
+		        			 display_group_by_names+=MyArrayItem.get(j).toString()+" ";
 
 		        		 }
 		        		 if (JSONObject.NULL.equals(MyArrayItem.get(MyArrayItem.length()-2)))
@@ -283,7 +284,7 @@ public class APIController {
 		        		 }
 		        		 else
 		        		 {
-		        			 jsonArraySortedItem.put(MyArrayItem.get(MyArrayItem.length()-2).toString());
+		        			 jsonArraySortedItem.put(display_group_by_names+MyArrayItem.get(MyArrayItem.length()-2).toString());
 		        		 }
 		        	
 		        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
