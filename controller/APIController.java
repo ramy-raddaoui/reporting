@@ -253,19 +253,30 @@ public class APIController {
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString());
 		       
-		        System.out.println("jsonArray"+jsonArray);
+		        //System.out.println("jsonArray"+jsonArray);
 		        JSONArray jsonArrayResult = new JSONArray();
 		        JSONArray jsonArraySortedFinal = new JSONArray();
 		        
-
-		        String first;
+ 
+		        String display_group_by_names="";
+		        System.out.println("displaaaay"+display);
 		        if (display.equals(new String("area")) || display.equals(new String("line")) )
 		        {
+		        	display_group_by_names="";
 		        	for (int i=0;i<jsonArray.length();i++)
 		        	{
 		        		JSONArray  MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
 		        		JSONArray jsonArraySortedItem = new JSONArray();
 		        		//System.out.println("MyArrayItem"+MyArrayItem);
+		        		 for (int j=1;j<MyArrayItem.length()-2;j++)
+		        		 {
+		        			// System.out.println("length"+jsonArray.length());
+		        			 //System.out.println();
+		        			 //System.out.println(j);
+		        			// System.out.println(MyArrayItem.get(j));
+		        		//	 display_group_by_names+=" "+MyArrayItem.get(j).toString();
+
+		        		 }
 		        		 if (JSONObject.NULL.equals(MyArrayItem.get(MyArrayItem.length()-2)))
 		        		 {
 		        			 jsonArraySortedItem.put("Others");
@@ -274,15 +285,7 @@ public class APIController {
 		        		 {
 		        			 jsonArraySortedItem.put(MyArrayItem.get(MyArrayItem.length()-2).toString());
 		        		 }
-		        		 for (int j=1;j<MyArrayItem.length()-2;j++)
-		        		 {
-		        			// System.out.println("length"+jsonArray.length());
-		        			 //System.out.println();
-		        			 //System.out.println(j);
-		        			// System.out.println(MyArrayItem.get(j));
-			        		 jsonArraySortedItem.put(MyArrayItem.get(j).toString());
-
-		        		 }
+		        	
 		        		 if (JSONObject.NULL.equals(MyArrayItem.get(0)))
 		        		 {
 		        			 jsonArraySortedItem.put("Others");
@@ -296,6 +299,7 @@ public class APIController {
 		    
 		        		 jsonArraySortedFinal.put(jsonArraySortedItem);
 		        	}
+	        		 System.out.println("check this "+jsonArraySortedFinal);
 		        	jsonArray=jsonArraySortedFinal;
 		        	//System.out.println(jsonArraySortedFinal);
 		        }
@@ -327,7 +331,7 @@ public class APIController {
 		        			String name_debut=(JSONObject.NULL.equals( MyArrayItem.get(1)))?"Others":(String)  MyArrayItem.get(1);
 		        			jsonObjInSeries_debut.put("name", name_debut);
 		        			//System.out.println(" MyArrayItem.getNumber(2)"+ MyArrayItem.getNumber(2));
-		        			jsonObjInSeries_debut.put("value", MyArrayItem.getNumber(2));
+		        			jsonObjInSeries_debut.put("value", MyArrayItem.getNumber(MyArrayItem.length()-1));
 				  			series.put(jsonObjInSeries_debut);
 				  		//	System.out.println(jsonObjInSeries_debut);
 				  		while (X.equals(xNext))
@@ -337,7 +341,7 @@ public class APIController {
 				  			String name=(JSONObject.NULL.equals(MyArrayItemNext.get(1)))?"Others":(String) MyArrayItemNext.get(1);
 
 				  			jsonObjInSeries.put("name", name);
-				  			jsonObjInSeries.put("value", MyArrayItemNext.getNumber(2));
+				  			jsonObjInSeries.put("value", MyArrayItemNext.getNumber(MyArrayItemNext.length()-1));
 				  		//	System.out.println(jsonObjInSeries.toString());
 				  			series.put(jsonObjInSeries);
 				  			 i++;
@@ -352,7 +356,7 @@ public class APIController {
 				  				 {
 				  					 String namefinal=(JSONObject.NULL.equals(MyArrayItem.get(1)))?"Others":(String) MyArrayItem.get(1);
 				  					jsonObjInSeries.put("name", namefinal);
-						  			jsonObjInSeries.put("value", MyArrayItem.getNumber(2));
+						  			jsonObjInSeries.put("value", MyArrayItem.getNumber(MyArrayItem.length()-1));
 						  			series.put(jsonObjInSeries);
 						  		//	System.out.println("jsonObjInSeries.toString() DANS IF"+jsonObjInSeries.toString());
 
@@ -411,7 +415,7 @@ public class APIController {
 					    jsonArrayResult.put(jsonObj);
 					}
 		        }
-		        	System.out.println("jsonArrayResult"+jsonArrayResult);
+		        	//System.out.println("jsonArrayResult"+jsonArrayResult);
 		     		     return jsonArrayResult;
 	    }
 	   
