@@ -146,11 +146,14 @@ public class APIController {
 		  if (display.equals(new String("area"))==true || display.equals(new String("line"))==true)
 		    Order_By_Elements=last_GB;
 		    query+="FROM commissions_fact_indiv ";
+		    if (periodElements.length()!=0)
+		    {
 		    JSONObject JSONObjItem_period_debut = new JSONObject(periodElements.getJSONObject(0).toString());
 		    JSONObject JSONObjItem_period_fin = new JSONObject(periodElements.getJSONObject(1).toString());
 		    System.out.println("JSONObjItem_period_debut"+JSONObjItem_period_debut);
 		    query+="WHERE TO_CHAR("+h.get(JSONObjItem_period_debut.getString("name"))+",'DD/MM/YYYY')>= '"+JSONObjItem_period_debut.getString("value")+"' ";
 		    query+=" AND TO_CHAR("+h.get(JSONObjItem_period_fin.getString("name"))+",'DD/MM/YYYY')<= '"+JSONObjItem_period_fin.getString("value")+"' ";
+		    }
 		    query+=" GROUP BY "+h.get(param1)+Group_By_Elements+" "+"ORDER BY "+Order_By_Elements;
 		    System.out.println("queryyy"+query);
 		   // query="SELECT interv_dse_name AS nom_boutique ,commer_obj_line_name AS nom_produit,SUM(final_payment_value) AS rémunération_vendeurs_all FROM commissions_fact_indiv GROUP BY interv_dse_name,commer_obj_line_name ORDER BY interv_dse_name , commer_obj_line_name";
