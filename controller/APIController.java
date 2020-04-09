@@ -98,10 +98,9 @@ public class APIController {
 		h.put("boutique","interv_dse_name");
 		h.put("debut_période","start_period");
 		h.put("fin_période","end_period");
-		h.put("somme", "SUM"); 
-		h.put("moyenne", "AVG"); 
+
 		//JSONArray my_array = data.getJSONArray("param2");
-		System.out.println("This is first step "+data);
+		//System.out.println("This is first step "+data);
 
 		JSONObject json_object = new JSONObject(data); 
 		JSONObject json_object1= new JSONObject(json_object.get("data").toString());
@@ -134,28 +133,28 @@ public class APIController {
 	    	 last_GB=h.get(JSONObjItem.getString("nom"));
 		 }
 //	     System.out.println("query version "+query);
-    	 System.out.println("Group_By_Elements"+Group_By_Elements);
+    	// System.out.println("Group_By_Elements"+Group_By_Elements);
 
 		// System.out.println("group by variaable "+Group_By_Elements);
 		  for (int i = 0; i < test_param2.length(); i++) 
   		{
 		     JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());
 	//	     System.out.println("JSONObjItem"+JSONObjItem);
-		    	 query+= " ,"+h.get(JSONObjItem.getString("metrique"))+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
+		    	 query+= " ,"+JSONObjItem.getString("metrique")+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
   		}
 		  if (display.equals(new String("area"))==true || display.equals(new String("line"))==true)
 		    Order_By_Elements=last_GB;
-		    query+="FROM commissions_fact_indiv ";
+		    query+=" FROM commissions_fact_indiv WHERE "+h.get(param1)+" IS NOT NULL ";
 		    if (periodElements.length()!=0)
 		    {
 		    JSONObject JSONObjItem_period_debut = new JSONObject(periodElements.getJSONObject(0).toString());
 		    JSONObject JSONObjItem_period_fin = new JSONObject(periodElements.getJSONObject(1).toString());
 		    System.out.println("JSONObjItem_period_debut"+JSONObjItem_period_debut);
-		    query+="WHERE TO_CHAR("+h.get(JSONObjItem_period_debut.getString("name"))+",'DD/MM/YYYY')>= '"+JSONObjItem_period_debut.getString("value")+"' ";
+		    query+="AND TO_CHAR("+h.get(JSONObjItem_period_debut.getString("name"))+",'DD/MM/YYYY')>= '"+JSONObjItem_period_debut.getString("value")+"' ";
 		    query+=" AND TO_CHAR("+h.get(JSONObjItem_period_fin.getString("name"))+",'DD/MM/YYYY')<= '"+JSONObjItem_period_fin.getString("value")+"' ";
 		    }
 		    query+=" GROUP BY "+h.get(param1)+Group_By_Elements+" "+"ORDER BY "+Order_By_Elements;
-		    System.out.println("queryyy"+query);
+		   // System.out.println("queryyy"+query);
 		   // query="SELECT interv_dse_name AS nom_boutique ,commer_obj_line_name AS nom_produit,SUM(final_payment_value) AS rémunération_vendeurs_all FROM commissions_fact_indiv GROUP BY interv_dse_name,commer_obj_line_name ORDER BY interv_dse_name , commer_obj_line_name";
 		//   System.out.println("query"+query);
 		    /*Group By Injecting Items Boucle
@@ -172,10 +171,11 @@ public class APIController {
  	String resultat=""; 
 	//param1=param1.replaceAll(" ","_");
 	//param2=param2.replaceAll(" ","_");
-
+ 
 	//query_updated+=  
-	//String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_")+","+h.get(metrique)+"("+h.get(param2)+") AS "+param2.replaceAll(" ","_")+" from commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING "+h.get(metrique)+"("+h.get(param2)+")>"+seuil ;
-	System.out.println(query);
+	//query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_")+","+h.get(metrique)+"("+h.get(param2)+") AS "+param2.replaceAll(" ","_")+" from commissions_fact_indiv GROUP BY "+h.get(param1)+" HAVING "+h.get(metrique)+"("+h.get(param2)+")>"+seuil ;
+	//query="SELECT interv_dse_name AS boutique , count(*) as compter ,sum(final_payment_value) AS Rémunération_finale  FROM commissions_fact_indiv WHERE interv_dse_name IS NOT NULL AND TO_CHAR(start_period,'DD/MM/YYYY')>= '01/10/2019'  AND TO_CHAR(end_period,'DD/MM/YYYY')<= '31/12/2019'  GROUP BY interv_dse_name ORDER BY interv_dse_name ";
+ 	//System.out.println(query);
 	try {
 			  	
 				URL url = new URL("http://localhost:3000/api/card");
@@ -183,15 +183,18 @@ public class APIController {
 				conn.setDoOutput(true);
 				conn.setRequestMethod("POST");
 				conn.setRequestProperty("Content-Type", "application/json");
-				conn.setRequestProperty("X-Metabase-Session", "0ddb6c1c-decc-40c1-a09a-40f195bb3c9d");
+				conn.setRequestProperty("X-Metabase-Session", "33f570da-ac9e-476a-874e-5a26c251a1de");
 				//String input_marche_old = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\": \"SELECT c.interv_full_name as nom_intervenant , SUM(c.vg_achievement_value_nb) as Nombre_de_produits_vendus from commissions_fact_indiv as c GROUP BY c.interv_full_name having SUM(c.vg_achievement_value_nb)>0 \" },\"type\": \"native\" },\"display\": \"pie\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\"nom intervenant\"],\"graph.metrics\": [\"Nombre_de_produits_vendus\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
-				String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \""+display+"\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\"param2\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
+			//	String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \""+display+"\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\"param2\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
+				String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \"combo\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\"param2\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
+
+				System.out.println("input"+input);
 				OutputStream os = conn.getOutputStream();
 				os.write(input.getBytes());
 				os.flush();
 				BufferedReader br = new BufferedReader(new InputStreamReader(
 						(conn.getInputStream())));
-
+		
 				String output;
 				
 				while ((output = br.readLine()) != null) {
@@ -208,10 +211,11 @@ public class APIController {
 				e.printStackTrace();
 
 			 }
-			System.out.println("This is resultat"+resultat);
+			//System.out.println("This is resultat"+resultat);
 		   JSONObject jsonobject = new JSONObject(resultat);
 		   int ID_CARD=jsonobject.getInt("id");
-		   System.out.println("TEST PARAM2"+test_param2.toString());
+		 //  System.out.println("ID_CARD"+ID_CARD);
+		//   System.out.println("TEST PARAM2"+test_param2.toString());
 	      String resultat_final=this.PiechartSofctwithParamsnew(ID_CARD,display,test_param2).toString();
 	      //this.delete_chart(ID_CARD);
 	      //System.out.println(ID_CARD);
@@ -223,7 +227,7 @@ public class APIController {
 		  }
 		  */
 		
-
+	      	System.out.println("resultat final"+resultat_final);
 		  		return resultat_final;
 			}
     
@@ -244,7 +248,7 @@ public class APIController {
 						e1.printStackTrace();
 					}
 					
-	        request.addHeader("X-Metabase-Session","0ddb6c1c-decc-40c1-a09a-40f195bb3c9d");
+	        request.addHeader("X-Metabase-Session","33f570da-ac9e-476a-874e-5a26c251a1de");
 	        ResponseHandler<String> handler = new BasicResponseHandler();
 	        String body = null;
 	        HttpResponse response = null;
@@ -263,7 +267,6 @@ public class APIController {
 	     //   JSONArray jsonArray = new JSONArray(body); 
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString());
-		       
 		        //System.out.println("jsonArray"+jsonArray);
 		        JSONArray jsonArrayResult = new JSONArray();
 		        JSONArray jsonArraySortedFinal = new JSONArray();
@@ -322,7 +325,7 @@ public class APIController {
 		        {
 		        	int i=0;
 		        	String X_FINALE = null;
-		        	while (i<(jsonArray.length()-1))
+		        	while (i<(jsonArray.length()/2-1))
 		        	{
 		        		JSONObject jsonObj = new JSONObject();
 		        		JSONArray  MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
@@ -416,6 +419,43 @@ public class APIController {
 				  		i++;
 		        	}
 		        }
+		        //*******************
+		        else if (display.equals(new String("combo")))
+		        {
+		        	JSONObject JSONObjItem = new JSONObject(param2.getJSONObject(1).toString());
+
+		        	
+		        	JSONArray Barchart= new JSONArray();
+		        	JSONArray Linechart= new JSONArray();
+		        	JSONArray series= new JSONArray();
+		        	 JSONObject LineChartObj = new JSONObject();
+		        	 LineChartObj.put("name",JSONObjItem.getString("nom"));
+		        	 
+				       System.out.println("result of fectchin data"+jsonArray);
+				      	for (int i = 0; i < jsonArray.length()/2; i++) 
+			        	{
+						    JSONArray jsonArrayItem = jsonArray.getJSONArray(i);
+						    JSONObject jsonObj = new JSONObject();
+						    JSONObject jsonObj2 = new JSONObject();
+
+						
+							    jsonObj.put("name",jsonArrayItem.get(0));	   
+							    jsonObj.put("value",jsonArrayItem.get(1));
+							    jsonObj2.put("name",jsonArrayItem.get(0));	   
+							    jsonObj2.put("value",jsonArrayItem.get(2));
+							    Barchart.put(jsonObj);
+							    series.put(jsonObj2);
+					
+						    
+						
+						}
+				      	LineChartObj.put("series", series);
+				      	Linechart.put(LineChartObj);
+				        jsonArrayResult.put(Barchart);
+					    jsonArrayResult.put(Linechart);
+		        }
+		        
+		        //********************
 		        else
 		        {
 		        	for (int i = 0; i < jsonArray.length()/3; i++) 
