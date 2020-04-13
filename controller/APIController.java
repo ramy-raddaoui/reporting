@@ -123,7 +123,7 @@ public class APIController {
 			  Order_By_Elements=h.get(param1)+" ";
 		 }
 		 String last_GB = "";
-		 
+		 String GB_WHERE= "";
 		 for (int i=0;i<GroupByElements.length();i++)
 		 {
 		     JSONObjItem = new JSONObject(GroupByElements.getJSONObject(i).toString());
@@ -131,6 +131,7 @@ public class APIController {
 		     query+=" ,"+h.get(JSONObjItem.getString("nom"))+" AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" " ; 
 	    	 Group_By_Elements+=" ,"+h.get(JSONObjItem.getString("nom"))+" ";
 	    	 last_GB=h.get(JSONObjItem.getString("nom"));
+	    	 GB_WHERE+=" AND "+h.get(JSONObjItem.getString("nom"))+" IS NOT NULL ";
 		 }
 //	     System.out.println("query version "+query);
     	// System.out.println("Group_By_Elements"+Group_By_Elements);
@@ -144,7 +145,7 @@ public class APIController {
   		}
 		  if (display.equals(new String("area"))==true || display.equals(new String("line"))==true)
 		    Order_By_Elements=last_GB;
-		    query+=" FROM commissions_fact_indiv WHERE "+h.get(param1)+" IS NOT NULL ";
+		    query+=" FROM commissions_fact_indiv WHERE "+h.get(param1)+" IS NOT NULL "+GB_WHERE;
 		    if (periodElements.length()!=0)
 		    {
 		    JSONObject JSONObjItem_period_debut = new JSONObject(periodElements.getJSONObject(0).toString());
@@ -267,7 +268,7 @@ public class APIController {
 	     //   JSONArray jsonArray = new JSONArray(body); 
 			   JSONObject jsonobject = new JSONObject(body).getJSONObject("data");
 		        JSONArray jsonArray = new JSONArray(jsonobject.getJSONArray("rows").toString());
-		        //System.out.println("jsonArray"+jsonArray);
+		        System.out.println("jsonArray"+jsonArray);
 		        JSONArray jsonArrayResult = new JSONArray();
 		        JSONArray jsonArraySortedFinal = new JSONArray();
 		        
