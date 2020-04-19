@@ -22,6 +22,7 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -57,11 +58,24 @@ public class APIController {
     @Autowired
     private ConfigurationDAO configDao;
     
-    @GetMapping("/get/configuration/{alias}")
-    public List<Configuration> getConfiguration(@PathVariable String alias)
-	{
+    Hashtable<String,String> confset = new Hashtable<String,String>();
     
-		 return configDao.findByAliasTable(alias);
+    @GetMapping("/get/tables/alias")
+    public List<String> getTablesAlias()
+	{
+		 return configDao.findDistinctAliasTables();
+	} 
+    
+    @GetMapping("/get/configuration/{alias}")
+    public List<Configuration> getConfigurationByAlias(@PathVariable String alias)
+	{
+		confset.clear();
+    	List<Configuration> ma_configuration = configDao.findByAliasTable(alias);
+    	confset.put(ma_configuration.get(0).getAliasTable(),ma_configuration.get(0).getNomTable());
+    	for (Configuration element : ma_configuration) {
+    		confset.put(element.getAliasColonne(),element.getNomColonne());
+    	}
+		 return ma_configuration;
 	} 
 
 	public boolean delete_chart(int id)
@@ -102,7 +116,7 @@ public class APIController {
 	 
 	@PostMapping("/pieandhistchart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
-		Hashtable<String,String> h = new Hashtable<String,String>();
+		/*Hashtable<String,String> h = new Hashtable<String,String>();
 		h.put("nom intervenant","interv_full_name");
 		h.put("ventes par produit","vg_achievement_value_nb");
 		h.put("objectif par produit","vg_target_value");
@@ -112,7 +126,7 @@ public class APIController {
 		h.put("boutique","interv_dse_name");
 		h.put("debut_période","start_period");
 		h.put("fin_période","end_period");
-
+		*/
 		//JSONArray my_array = data.getJSONArray("param2");
 		//System.out.println("This is first step "+data);
 
@@ -126,7 +140,7 @@ public class APIController {
 
 	//	String seuil= json_object1.getString("seuil");
 
-		String query="SELECT "+h.get(param1)+" AS "+param1.replaceAll(" ","_");
+		String query="SELECT "+confset.get(param1)+" AS "+param1.replaceAll(" ","_");
 		
 		//SELECT Injecting Items Boucle
 		 JSONObject JSONObjItem = null;
@@ -134,7 +148,7 @@ public class APIController {
 		 String Order_By_Elements="";
 		 if (display.equals(new String("area"))==false && display.equals(new String("line"))==false)
 		 {
-			  Order_By_Elements=h.get(param1)+" ";
+			  Order_By_Elements=confset.get(param1)+" ";
 		 }
 		 String last_GB = "";
 		 String GB_WHERE= "";
@@ -142,10 +156,10 @@ public class APIController {
 		 {
 		     JSONObjItem = new JSONObject(GroupByElements.getJSONObject(i).toString());
 		   
-		     query+=" ,"+h.get(JSONObjItem.getString("nom"))+" AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" " ; 
-	    	 Group_By_Elements+=" ,"+h.get(JSONObjItem.getString("nom"))+" ";
-	    	 last_GB=h.get(JSONObjItem.getString("nom"));
-	    	 GB_WHERE+=" AND "+h.get(JSONObjItem.getString("nom"))+" IS NOT NULL ";
+		     query+=" ,"+confset.get(JSONObjItem.getString("nom"))+" AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" " ; 
+	    	 Group_By_Elements+=" ,"+confset.get(JSONObjItem.getString("nom"))+" ";
+	    	 last_GB=confset.get(JSONObjItem.getString("nom"));
+	    	 GB_WHERE+=" AND "+confset.get(JSONObjItem.getString("nom"))+" IS NOT NULL ";
 		 }
 //	     System.out.println("query version "+query);
     	// System.out.println("Group_By_Elements"+Group_By_Elements);
@@ -155,20 +169,20 @@ public class APIController {
   		{
 		     JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());
 	//	     System.out.println("JSONObjItem"+JSONObjItem);
-		    	 query+= " ,"+JSONObjItem.getString("metrique")+"("+h.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
+		    	 query+= " ,"+JSONObjItem.getString("metrique")+"("+confset.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
   		}
 		  if (display.equals(new String("area"))==true || display.equals(new String("line"))==true)
 		    Order_By_Elements=last_GB;
-		    query+=" FROM commissions_fact_indiv WHERE "+h.get(param1)+" IS NOT NULL "+GB_WHERE;
+		    query+=" FROM commissions_fact_indiv WHERE "+confset.get(param1)+" IS NOT NULL "+GB_WHERE;
 		    if (periodElements.length()!=0)
 		    {
 		    JSONObject JSONObjItem_period_debut = new JSONObject(periodElements.getJSONObject(0).toString());
 		    JSONObject JSONObjItem_period_fin = new JSONObject(periodElements.getJSONObject(1).toString());
 		    System.out.println("JSONObjItem_period_debut"+JSONObjItem_period_debut);
-		    query+="AND TO_CHAR("+h.get(JSONObjItem_period_debut.getString("name"))+",'DD/MM/YYYY')>= '"+JSONObjItem_period_debut.getString("value")+"' ";
-		    query+=" AND TO_CHAR("+h.get(JSONObjItem_period_fin.getString("name"))+",'DD/MM/YYYY')<= '"+JSONObjItem_period_fin.getString("value")+"' ";
+		    query+="AND TO_CHAR("+confset.get(JSONObjItem_period_debut.getString("name"))+",'DD/MM/YYYY')>= '"+JSONObjItem_period_debut.getString("value")+"' ";
+		    query+=" AND TO_CHAR("+confset.get(JSONObjItem_period_fin.getString("name"))+",'DD/MM/YYYY')<= '"+JSONObjItem_period_fin.getString("value")+"' ";
 		    }
-		    query+=" GROUP BY "+h.get(param1)+Group_By_Elements+" "+"ORDER BY "+Order_By_Elements;
+		    query+=" GROUP BY "+confset.get(param1)+Group_By_Elements+" "+"ORDER BY "+Order_By_Elements;
 		   // System.out.println("queryyy"+query);
 		   // query="SELECT interv_dse_name AS nom_boutique ,commer_obj_line_name AS nom_produit,SUM(final_payment_value) AS rémunération_vendeurs_all FROM commissions_fact_indiv GROUP BY interv_dse_name,commer_obj_line_name ORDER BY interv_dse_name , commer_obj_line_name";
 		//   System.out.println("query"+query);
