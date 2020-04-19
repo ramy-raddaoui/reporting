@@ -1,5 +1,8 @@
 package com.sofct.sofct.controller;
 import org.apache.http.HttpResponse;
+import com.sofct.sofct.dao.ConfigurationDAO;
+import com.sofct.sofct.model.Configuration;
+
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.ResponseHandler;
@@ -20,7 +23,9 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -49,7 +54,16 @@ import java.net.URL;
 @CrossOrigin(origins = "http://localhost:4200")
 public class APIController { 
 	
-	
+    @Autowired
+    private ConfigurationDAO configDao;
+    
+    @GetMapping("/get/configuration/{alias}")
+    public List<Configuration> getConfiguration(@PathVariable String alias)
+	{
+    
+		 return configDao.findByAliasTable(alias);
+	} 
+
 	public boolean delete_chart(int id)
 	{
  
@@ -57,12 +71,12 @@ public class APIController {
 		try {
 		URL url = new URL("http://localhost:3000/api/card/"+id);
 		HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-		conn.setDoOutput(true);
+		conn.setDoOutput(true); 
 		conn.setRequestMethod("DELETE");
 		conn.setRequestProperty("Content-Type", "application/json");
 		conn.setRequestProperty("X-Metabase-Session", "68a09086-0d96-4789-b85f-0932a466fb42");
 		BufferedReader br = new BufferedReader(new InputStreamReader(
-				(conn.getInputStream())));
+				(conn.getInputStream()))); 
 
 		String output;
 		
@@ -85,7 +99,7 @@ public class APIController {
 
 	}
 	
-	
+	 
 	@PostMapping("/pieandhistchart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
 		Hashtable<String,String> h = new Hashtable<String,String>();
@@ -326,7 +340,7 @@ public class APIController {
 		        {
 		        	int i=0;
 		        	String X_FINALE = null;
-		        	while (i<(jsonArray.length()/2-1))
+		        	while (i<(jsonArray.length()-1))
 		        	{
 		        		JSONObject jsonObj = new JSONObject();
 		        		JSONArray  MyArrayItem=new JSONArray(jsonArray.getJSONArray(i).toString());
