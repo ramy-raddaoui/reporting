@@ -2,6 +2,7 @@ package com.sofct.sofct.model;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class Configuration {
@@ -10,8 +11,11 @@ public class Configuration {
       @GeneratedValue
 	  private int id;
       
-	  private String nomTable;
-	  private String aliasTable;
+		@ManyToOne
+		private TableRef tableReferenced;
+		
+		
+
 	  private String nomColonne;
 	  private String aliasColonne;
 	  private String type;
@@ -19,19 +23,26 @@ public class Configuration {
 	  public Configuration() {}
 	  
 	  
-	public Configuration(int id, String nomTable, String aliasTable, String nomColonne, String aliasColonne,String type) {
+
+
+	public Configuration(int id, TableRef tableReferenced, String nomTable, String aliasTable, String nomColonne,
+			String aliasColonne, String type) {
+		super();
 		this.id = id;
-		this.nomTable = nomTable;
-		this.aliasTable = aliasTable;
-		this.nomColonne = nomColonne; 
+		this.tableReferenced = tableReferenced;
+		this.nomColonne = nomColonne;
 		this.aliasColonne = aliasColonne;
 		this.type = type;
 	}
 
 
+
+
 	public int getId() {
-		return id;
+		return id; 
 	}
+
+
 
 
 	public void setId(int id) {
@@ -39,24 +50,19 @@ public class Configuration {
 	}
 
 
-	public String getNomTable() {
-		return nomTable;
+
+
+	public TableRef getTable() {
+		return tableReferenced;
 	}
 
 
-	public void setNomTable(String nomTable) {
-		this.nomTable = nomTable;
+
+
+	public void setTable(TableRef tableReferenced) {
+		this.tableReferenced = tableReferenced;
 	}
 
-
-	public String getAliasTable() {
-		return aliasTable;
-	}
-
-
-	public void setAliasTable(String aliasTable) {
-		this.aliasTable = aliasTable;
-	}
 
 
 	public String getNomColonne() {
@@ -64,9 +70,13 @@ public class Configuration {
 	}
 
 
+
+
 	public void setNomColonne(String nomColonne) {
 		this.nomColonne = nomColonne;
 	}
+
+
 
 
 	public String getAliasColonne() {
@@ -74,9 +84,13 @@ public class Configuration {
 	}
 
 
+
+
 	public void setAliasColonne(String aliasColonne) {
 		this.aliasColonne = aliasColonne;
 	}
+
+
 
 
 	public String getType() {
@@ -84,10 +98,16 @@ public class Configuration {
 	}
 
 
+
+
 	public void setType(String type) {
 		this.type = type;
-	} 
-	  
+	}
+
+
+
+
+	
 	 
 
 } 

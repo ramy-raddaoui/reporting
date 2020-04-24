@@ -1,7 +1,13 @@
 package com.sofct.sofct.controller;
 import org.apache.http.HttpResponse;
+
+import com.sofct.sofct.dao.ChartDAO;
 import com.sofct.sofct.dao.ConfigurationDAO;
-import com.sofct.sofct.model.Configuration;
+import com.sofct.sofct.dao.DayNumberDAO;
+import com.sofct.sofct.dao.TableRefDAO;
+import com.sofct.sofct.dao.UserDAO;
+import com.sofct.sofct.dao.WeekDaysDAO;
+import com.sofct.sofct.model.*;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -21,10 +27,14 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -58,25 +68,62 @@ public class APIController {
     @Autowired
     private ConfigurationDAO configDao;
     
+    @Autowired
+    private ChartDAO chartDao;
+    
+    @Autowired
+    private WeekDaysDAO weekDao;
+    
+    @Autowired
+    private DayNumberDAO dayNumberDao;
+    
+    @Autowired
+    private UserDAO userDao;
+    
+    @Autowired
+    private TableRefDAO tableDao;
+    
     Hashtable<String,String> confset = new Hashtable<String,String>();
     
-    @GetMapping("/get/tables/alias")
+    
+    @GetMapping("/get/chart/data/{id}")
+    public String getChartsData(@PathVariable int id)
+	{
+    	Chart chart = chartDao.getOne(id);
+		return chart.getDataRequest(); 
+	} 
+     
+    @GetMapping("/get/charts/of/user/{id}")
+    public List<List<String>> getChartsByuser(@PathVariable int id,@PathVariable String ValueoftableAlias)
+	{
+    	User prop = userDao.getOne(id);
+    	System.out.println(prop.getName());
+    	//List<List<String>> userCharts = chartDao.findProprietaireCharts(prop,ValueoftableAlias);
+		return null; 
+	} 
+    
+    
+    @GetMapping("/get/tables/alias") 
     public List<String> getTablesAlias()
 	{
-		 return configDao.findDistinctAliasTables();
-	} 
+		 return tableDao.findDistinctAliasTable();
+	}    
     
     @GetMapping("/get/configuration/{alias}")
     public List<Configuration> getConfigurationByAlias(@PathVariable String alias)
-	{
-		confset.clear();
-    	List<Configuration> ma_configuration = configDao.findByAliasTable(alias);
-    	confset.put(ma_configuration.get(0).getAliasTable(),ma_configuration.get(0).getNomTable());
+	{  
+		confset.clear();    
+	 	TableRef my_table= tableDao.getByAliasTable(alias);
+	 	System.out.println(my_table.getNomTable());
+    	List<Configuration> ma_configuration = configDao.getBytableReferenced(my_table);
+    	confset.put(my_table.getAliasTable(),my_table.getNomTable());
     	for (Configuration element : ma_configuration) {
     		confset.put(element.getAliasColonne(),element.getNomColonne());
     	}
-		 return ma_configuration;
-	} 
+    	  
+		 //return ma_configuration;
+    	return ma_configuration ;
+	}  
 
 	public boolean delete_chart(int id)
 	{
@@ -88,7 +135,7 @@ public class APIController {
 		conn.setDoOutput(true); 
 		conn.setRequestMethod("DELETE");
 		conn.setRequestProperty("Content-Type", "application/json");
-		conn.setRequestProperty("X-Metabase-Session", "68a09086-0d96-4789-b85f-0932a466fb42");
+		conn.setRequestProperty("X-Metabase-Session", "f99a4ff9-7211-414d-9a61-d5a8adcabba9");
 		BufferedReader br = new BufferedReader(new InputStreamReader(
 				(conn.getInputStream()))); 
 
@@ -113,10 +160,128 @@ public class APIController {
 
 	}
 	
-	 
+	   @PostMapping("/savechart")
+	    public boolean saveChart(@RequestBody String data)
+	    {
+			JSONObject json_object = new JSONObject(data); 
+			JSONArray json_array_data= new JSONArray(json_object.get("data").toString());
+			JSONObject reportData = new JSONObject(json_array_data.get(0).toString()); 
+			JSONObject requestData = new JSONObject(json_array_data.get(1).toString()); 
+			Chart c = new Chart();
+			List <String>GroupByConditionnedItems=new ArrayList<String>();
+			c.setAbscisse(requestData.get("param1").toString());
+			List <Ordonnée> OrdItems = new ArrayList<Ordonnée>();
+			
+			for (int i=0;i<requestData.getJSONArray("param2").length();i++)
+			{
+				Ordonnée ord = new Ordonnée();
+				ord.setName(requestData.getJSONArray("param2").getJSONObject(i).get("nom").toString());
+				ord.setMetrique(requestData.getJSONArray("param2").getJSONObject(i).get("metrique").toString());
+				OrdItems.add(ord);
+			}
+			c.setOrdonnéeItems(OrdItems);
+			List <GroupBy> groupByList = new ArrayList<GroupBy>();
+			
+			for (int i=0;i<requestData.getJSONArray("where").length();i++)
+			{
+				JSONObject ConditionItem =requestData.getJSONArray("where").getJSONObject(i);
+				List <Condition> conditions = new ArrayList<Condition>();
+				switch(ConditionItem.get("location").toString())
+				{
+				case "Abscisse":
+					 
+					for (int j=0;j<ConditionItem.getJSONArray("conditions").length();j++)
+					{
+						Condition cond = new Condition();
+						cond.setOperator(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("operator").toString());
+						cond.setValue(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("valeur").toString());
+						cond.setLogicCond(ConditionItem.get("logic").toString());
+						conditions.add(cond);
+						
+					}
+					c.setConditions(conditions);
+					c.setAbscisse(ConditionItem.get("name").toString());
+					break;  
+				case "GROUP BY":
+					GroupBy groupBy = new GroupBy();
+					groupBy.setName(ConditionItem.get("name").toString());
+					GroupByConditionnedItems.add(ConditionItem.get("name").toString());
+					for (int j=0;j<ConditionItem.getJSONArray("conditions").length();j++)
+					{
+						Condition cond = new Condition();
+						cond.setOperator(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("operator").toString());
+						cond.setValue(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("valeur").toString());
+						cond.setLogicCond(ConditionItem.get("logic").toString());
+						conditions.add(cond);
+						
+					}
+					groupBy.setConditions(conditions);
+					groupByList.add(groupBy);break;
+					  
+					default: break;
+				}
+			}
+			for (int i=0;i<requestData.getJSONArray("GroupBy").length();i++)
+				if (!GroupByConditionnedItems.contains(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString()))
+					groupByList.add(new GroupBy(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString()));
+
+			  
+			c.setGroupByItems(groupByList);
+			
+			System.out.println(requestData);
+			//c.setDataRequest(requestData.toString());
+			c.setReportDesc(reportData.getString("reportdesc"));
+			c.setReportName(reportData.getString("reportname"));
+			c.setgReport(reportData.getString("greport"));
+			c.setdisplayType(requestData.getString("display"));
+			List<SpecificMail> listSpecificMails = new ArrayList<SpecificMail>();
+			for (int i=0;i<reportData.getJSONArray("emails").length();i++)
+				listSpecificMails.add(new SpecificMail(reportData.getJSONArray("emails").get(i).toString()));
+			c.setSpecificMails(listSpecificMails);
+			switch (c.getgReport())
+			{
+			case "Weekly": 	
+			//	List<WeekDays> listWeekDays = new ArrayList<WeekDays>();
+		        Set<WeekDays> listWeekDays = new HashSet<WeekDays>(); 
+
+				for (int i=0;i<reportData.getJSONArray("gReportAdd").length();i++)
+				{
+					WeekDays wk = weekDao.findByName(reportData.getJSONArray("gReportAdd").get(i).toString());
+					listWeekDays.add(wk);
+				}
+				c.setWeekDays(listWeekDays);
+				User proprietaire = userDao.findByName("Rami Raddaoui");
+				c.setProprietaire(proprietaire); 
+				chartDao.save(c);break;
+			case "Monthlybydate":
+		        Set<DayNumber> listDayNumbers = new HashSet<DayNumber>(); 
+		    	for (int i=0;i<reportData.getJSONArray("gReportAdd").length();i++)
+				{
+		    		System.out.println(reportData.getJSONArray("gReportAdd").get(i));
+					DayNumber dNumber = dayNumberDao.findByDayNum(Integer.parseInt(reportData.getJSONArray("gReportAdd").get(i).toString()));
+					listDayNumbers.add(dNumber);
+				}
+				c.setDayNumbers(listDayNumbers);
+				User user = userDao.findByName("Rami Raddaoui");
+				c.setProprietaire(user); 
+				chartDao.save(c);break; 
+			case "Onaspecificdate":break;
+			  //  Date date1=new SimpleDateFormat("dd/MM/yyyy").parse(sDate1);  
+
+					//listWeekDays.add(new listWeekDays (reportData.getJSONArray("gReportAdd").get(i).toString()))
+			} 
+			
+				//c.addSpecificMails(new SpecificMail(reportData.getJSONArray("emails").get(i).toString()));
+			
+			System.out.println(reportData);
+			return true;
+	    	
+	    }
+	   
+	   
 	@PostMapping("/pieandhistchart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
-		/*Hashtable<String,String> h = new Hashtable<String,String>();
+		/*Hashtable<String,String> h = new Hashtable<String,String>(); 
 		h.put("nom intervenant","interv_full_name");
 		h.put("ventes par produit","vg_achievement_value_nb");
 		h.put("objectif par produit","vg_target_value");
@@ -170,10 +335,10 @@ public class APIController {
 		     JSONObjItem = new JSONObject(test_param2.getJSONObject(i).toString());
 	//	     System.out.println("JSONObjItem"+JSONObjItem);
 		    	 query+= " ,"+JSONObjItem.getString("metrique")+"("+confset.get(JSONObjItem.getString("nom"))+") AS "+JSONObjItem.getString("nom").replaceAll(" ","_")+" ";
-  		}
+  		} 
 		  if (display.equals(new String("area"))==true || display.equals(new String("line"))==true)
 		    Order_By_Elements=last_GB;
-		    query+=" FROM commissions_fact_indiv WHERE "+confset.get(param1)+" IS NOT NULL "+GB_WHERE;
+		    query+=" FROM "+confset.get(json_object1.getString("FROM"))+" WHERE "+confset.get(param1)+" IS NOT NULL "+GB_WHERE;
 		    if (periodElements.length()!=0)
 		    {
 		    JSONObject JSONObjItem_period_debut = new JSONObject(periodElements.getJSONObject(0).toString());
@@ -212,7 +377,7 @@ public class APIController {
 				conn.setDoOutput(true);
 				conn.setRequestMethod("POST");
 				conn.setRequestProperty("Content-Type", "application/json");
-				conn.setRequestProperty("X-Metabase-Session", "33f570da-ac9e-476a-874e-5a26c251a1de");
+				conn.setRequestProperty("X-Metabase-Session", "f99a4ff9-7211-414d-9a61-d5a8adcabba9");
 				//String input_marche_old = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\": \"SELECT c.interv_full_name as nom_intervenant , SUM(c.vg_achievement_value_nb) as Nombre_de_produits_vendus from commissions_fact_indiv as c GROUP BY c.interv_full_name having SUM(c.vg_achievement_value_nb)>0 \" },\"type\": \"native\" },\"display\": \"pie\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\"nom intervenant\"],\"graph.metrics\": [\"Nombre_de_produits_vendus\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
 			//	String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \""+display+"\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\"param2\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
 				String input = "{\"dataset_query\": {\"database\": 4,\"name\":\"Nom\",\"native\": {\"query\":\""+query+"\"  },\"type\": \"native\" },\"display\": \"combo\",\"name\": \"test:1\",\"visualization_settings\": {\"graph.dimensions\": [\""+param1+"\"],\"graph.metrics\": [\"param2\"],\"graph.show_goal\": false,\"line.interpolate\": \"linear\",\"line.marker_enabled\": true,\"line.missing\": \"interpolate\",\"stackable.stack_type\": \"stacked\",\"table.column_widths\": [] }}";
@@ -277,7 +442,7 @@ public class APIController {
 						e1.printStackTrace();
 					}
 					
-	        request.addHeader("X-Metabase-Session","33f570da-ac9e-476a-874e-5a26c251a1de");
+	        request.addHeader("X-Metabase-Session","f99a4ff9-7211-414d-9a61-d5a8adcabba9");
 	        ResponseHandler<String> handler = new BasicResponseHandler();
 	        String body = null;
 	        HttpResponse response = null;
