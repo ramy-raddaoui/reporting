@@ -93,13 +93,13 @@ public class APIController {
 		return chart.getDataRequest(); 
 	} 
      
-    @GetMapping("/get/charts/of/user/{id}")
+    @GetMapping("/get/charts/of/user/{id}/{ValueoftableAlias}")
     public List<List<String>> getChartsByuser(@PathVariable int id,@PathVariable String ValueoftableAlias)
 	{
     	User prop = userDao.getOne(id);
     	System.out.println(prop.getName());
-    	//List<List<String>> userCharts = chartDao.findProprietaireCharts(prop,ValueoftableAlias);
-		return null; 
+    	List<List<String>> userCharts = chartDao.findProprietaireCharts(prop,ValueoftableAlias);
+		return userCharts; 
 	} 
     
     
@@ -181,7 +181,7 @@ public class APIController {
 			}
 			c.setOrdonnéeItems(OrdItems);
 			List <GroupBy> groupByList = new ArrayList<GroupBy>();
-			
+			if (requestData.getJSONArray("where"))
 			for (int i=0;i<requestData.getJSONArray("where").length();i++)
 			{
 				JSONObject ConditionItem =requestData.getJSONArray("where").getJSONObject(i);
