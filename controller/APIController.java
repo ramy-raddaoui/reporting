@@ -4,6 +4,7 @@ import org.apache.http.HttpResponse;
 import com.sofct.sofct.dao.ChartDAO;
 import com.sofct.sofct.dao.ConfigurationDAO;
 import com.sofct.sofct.dao.DayNumberDAO;
+import com.sofct.sofct.dao.OrdonnéeDAO;
 import com.sofct.sofct.dao.TableRefDAO;
 import com.sofct.sofct.dao.UserDAO;
 import com.sofct.sofct.dao.WeekDaysDAO;
@@ -83,14 +84,87 @@ public class APIController {
     @Autowired
     private TableRefDAO tableDao;
     
+    @Autowired
+    private OrdonnéeDAO ordonnéeDao;
+    
+    
     Hashtable<String,String> confset = new Hashtable<String,String>();
     
     
     @GetMapping("/get/chart/data/{id}")
     public String getChartsData(@PathVariable int id)
 	{
+    	JSONObject result = new JSONObject();
+
     	Chart chart = chartDao.getOne(id);
-		return chart.getDataRequest(); 
+    	List<Condition> abscisse_conditions = chart.getConditions();
+    	List<GroupBy> groupBy_Items = chart.getGroupByItems();
+    	JSONObject abscisse = new JSONObject();
+    	List<JSONObject> Ordonnee_items = new ArrayList<JSONObject>();
+    	List<Ordonnée> ordonnee=ordonnéeDao.getByChart(chart);
+    	for (Ordonnée ordonnee_item : ordonnee) {
+    		JSONObject ordonneItem = new JSONObject();
+    		ordonneItem.put("nom",ordonnee_item.getName());
+    		ordonneItem.put("metrique",ordonnee_item.getMetrique());
+    		Ordonnee_items.add(ordonneItem);
+    	}
+
+    	
+    	abscisse.put("id",chart.getId());
+    	abscisse.put("title",chart.getAbscisse());
+    	List<JSONObject> Gb_results = new ArrayList<JSONObject>();
+    	List<JSONObject> all_conditions = new ArrayList<JSONObject>();
+    	JSONObject abscisseConditionItem = new JSONObject();
+    	List<JSONObject>abscisseConditionItemConditions= new ArrayList<JSONObject>();
+    		if (abscisse_conditions.size()!=0)
+    		{
+        		abscisseConditionItem.put("logic",abscisse_conditions.get(0).getLogicCond());
+        		abscisseConditionItem.put("numberOfConditions", abscisse_conditions.size());
+	
+    		}
+    	for (int i=0;i<abscisse_conditions.size();i++)
+    	{
+    		JSONObject abscisseConditem = new JSONObject();
+    		abscisseConditem.put("name",chart.getAbscisse());
+    		abscisseConditem.put("valeur",abscisse_conditions.get(i).getValue());
+    		abscisseConditem.put("operator",abscisse_conditions.get(i).getOperator());
+           	abscisseConditionItemConditions.add(abscisseConditem);
+    	}
+    	abscisseConditionItem.put("conditions", abscisseConditionItemConditions);
+  
+    	//return abscisseConditionItem.toString(); 
+ 
+    	for (GroupBy element : groupBy_Items) {
+        	JSONObject groupByitem = new JSONObject();
+        	JSONObject groupByConditionItem = new JSONObject();
+
+        	groupByitem.put("id",element.getId());
+        	groupByitem.put("title",element.getName());
+        	Gb_results.add(groupByitem);
+        	groupByConditionItem.put("numberOfConditions",element.getConditions().size());
+        	List<JSONObject>groupByConditionItemConditions= new ArrayList<JSONObject>();
+        	for (int i=0;i<element.getConditions().size();i++)
+        	{
+            	JSONObject groupByConditem = new JSONObject();
+            	groupByConditem.put("name",element.getName());
+            	groupByConditem.put("valeur",element.getConditions().get(i).getValue());
+            	groupByConditem.put("operator",element.getConditions().get(i).getOperator());
+               	groupByConditionItemConditions.add(groupByConditem);
+            	groupByConditionItem.put("logic",element.getConditions().get(i).getLogicCond());
+
+              }
+        	groupByConditionItem.put("conditions", groupByConditionItemConditions);
+        	all_conditions.add(groupByConditionItem);
+    	}
+    	System.out.println(all_conditions.get(0).get("conditions"));
+    	all_conditions.add(abscisseConditionItem);
+    	result.put("abscisse",abscisse);
+    	result.put("conditions", all_conditions);
+    	result.put("ordonnee", Ordonnee_items);
+    	result.put("GROUP BY",Gb_results);
+		return result.toString();
+		
+		
 	} 
      
     @GetMapping("/get/charts/of/user/{id}/{ValueoftableAlias}")
@@ -107,7 +181,7 @@ public class APIController {
     public List<String> getTablesAlias()
 	{
 		 return tableDao.findDistinctAliasTable();
-	}    
+	}     
     
     @GetMapping("/get/configuration/{alias}")
     public List<Configuration> getConfigurationByAlias(@PathVariable String alias)
@@ -171,17 +245,20 @@ public class APIController {
 			List <String>GroupByConditionnedItems=new ArrayList<String>();
 			c.setAbscisse(requestData.get("param1").toString());
 			List <Ordonnée> OrdItems = new ArrayList<Ordonnée>();
-			
+			TableRef tableofChart= tableDao.getByAliasTable(requestData.get("FROM").toString());
+			c.setTableReferenced(tableofChart);
+			System.out.println(c.getTableReferenced().getAliasTable());
 			for (int i=0;i<requestData.getJSONArray("param2").length();i++)
 			{
 				Ordonnée ord = new Ordonnée();
 				ord.setName(requestData.getJSONArray("param2").getJSONObject(i).get("nom").toString());
 				ord.setMetrique(requestData.getJSONArray("param2").getJSONObject(i).get("metrique").toString());
 				OrdItems.add(ord);
+				ord.setChart(c);
 			}
 			c.setOrdonnéeItems(OrdItems);
 			List <GroupBy> groupByList = new ArrayList<GroupBy>();
-			if (requestData.getJSONArray("where"))
+			if (requestData.has("where"))
 			for (int i=0;i<requestData.getJSONArray("where").length();i++)
 			{
 				JSONObject ConditionItem =requestData.getJSONArray("where").getJSONObject(i);
@@ -196,6 +273,7 @@ public class APIController {
 						cond.setOperator(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("operator").toString());
 						cond.setValue(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("valeur").toString());
 						cond.setLogicCond(ConditionItem.get("logic").toString());
+						cond.setChart(c);
 						conditions.add(cond);
 						
 					}
@@ -212,10 +290,12 @@ public class APIController {
 						cond.setOperator(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("operator").toString());
 						cond.setValue(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("valeur").toString());
 						cond.setLogicCond(ConditionItem.get("logic").toString());
+						cond.setGroupBy(groupBy);
 						conditions.add(cond);
 						
 					}
 					groupBy.setConditions(conditions);
+					groupBy.setChart(c);
 					groupByList.add(groupBy);break;
 					  
 					default: break;
@@ -632,7 +712,7 @@ public class APIController {
 						    JSONObject jsonObj = new JSONObject();
 						    JSONObject jsonObj2 = new JSONObject();
 
-						
+						 
 							    jsonObj.put("name",jsonArrayItem.get(0));	   
 							    jsonObj.put("value",jsonArrayItem.get(1));
 							    jsonObj2.put("name",jsonArrayItem.get(0));	   

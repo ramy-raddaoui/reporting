@@ -3,6 +3,7 @@ package com.sofct.sofct.model;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 
 @Entity
 public class SpecificMail {
@@ -11,14 +12,20 @@ public class SpecificMail {
      @GeneratedValue
 	  private int id;
 	 
+	  @ManyToOne
+	  private Chart chart;
+	   
+	   
 	 String email;
 	 
 	 SpecificMail(){}
 
+	 
+	 
 	public SpecificMail(int id, String email) {
 		this.id = id;
 		this.email = email;
-	}
+	} 
 	
 	public SpecificMail(String email) {
 		this.email = email;

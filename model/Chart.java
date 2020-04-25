@@ -34,20 +34,19 @@ public class Chart {
 	    @ManyToMany
 	    Set<WeekDays> weekDays;
 	    
-		@OneToMany(cascade = {CascadeType.ALL})
+		@OneToMany(cascade = CascadeType.PERSIST, mappedBy = "chart")
 		private List<SpecificMail> specificMails;
 		
-		@OneToMany(cascade = {CascadeType.ALL})
+		@OneToMany(cascade = CascadeType.PERSIST, mappedBy = "chart")
 		private List<GroupBy> GroupByItems;
 		
-		@OneToMany(cascade = {CascadeType.ALL})
+		@OneToMany(cascade = CascadeType.PERSIST, mappedBy = "chart")
 		private List<Ordonnée> OrdonnéeItems;
 		
-		@OneToMany(cascade = {CascadeType.ALL})
+		@OneToMany(cascade = CascadeType.ALL, mappedBy = "chart")
 		private List<Condition> conditions;
 		
-		@Column(length=500)
-	    String dataRequest;
+
 	    
 	 @ManyToMany 
 	 private List<User> recipients;
@@ -68,7 +67,7 @@ public class Chart {
 
 	public Chart(int id, String reportName, String reportDesc, String gReport, String abscisse, String displayType,
 			Set<DayNumber> dayNumbers, Set<WeekDays> weekDays, List<SpecificMail> specificMails,
-			List<GroupBy> groupByItems, List<Ordonnée> ordonnéeItems, List<Condition> conditions, String dataRequest,
+			List<GroupBy> groupByItems, List<Ordonnée> ordonnéeItems, List<Condition> conditions,
 			List<User> recipients, List<User> excepts, User proprietaire, TableRef tableReferenced,
 			String onSpecificDate) {
 		super();
@@ -84,7 +83,6 @@ public class Chart {
 		GroupByItems = groupByItems;
 		OrdonnéeItems = ordonnéeItems;
 		this.conditions = conditions;
-		this.dataRequest = dataRequest;
 		this.recipients = recipients;
 		this.excepts = excepts;
 		this.proprietaire = proprietaire;
@@ -257,19 +255,6 @@ public class Chart {
 
 
 
-
-	public String getDataRequest() {
-		return dataRequest;
-	}
-
-
-	public void setDataRequest(String dataRequest) {
-		this.dataRequest = dataRequest;
-	}
-
-
-
-
 	public List<User> getRecipients() {
 		return recipients;
 	}
@@ -336,7 +321,7 @@ public class Chart {
 	}
 	
 
-
+ 
 
 	 
 }
