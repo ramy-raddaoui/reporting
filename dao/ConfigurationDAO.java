@@ -22,5 +22,6 @@ public interface ConfigurationDAO extends JpaRepository<Configuration, Integer> 
 
     
 	public List<Configuration> getBytableReferenced(TableRef my_table);
+	public Configuration findByAliasColonne(String string);
 }
       

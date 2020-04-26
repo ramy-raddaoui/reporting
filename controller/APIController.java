@@ -104,14 +104,14 @@ public class APIController {
     	List<Ordonnée> ordonnee=ordonnéeDao.getByChart(chart);
     	for (Ordonnée ordonnee_item : ordonnee) {
     		JSONObject ordonneItem = new JSONObject();
-    		ordonneItem.put("nom",ordonnee_item.getName());
+    		ordonneItem.put("nom",ordonnee_item.getConfiguration().getNomColonne());
     		ordonneItem.put("metrique",ordonnee_item.getMetrique());
     		Ordonnee_items.add(ordonneItem);
     	}
 
     	
     	abscisse.put("id",chart.getId());
-    	abscisse.put("title",chart.getAbscisse());
+    	abscisse.put("title",chart.getConfiguration().getAliasColonne());
     	List<JSONObject> Gb_results = new ArrayList<JSONObject>();
     	List<JSONObject> all_conditions = new ArrayList<JSONObject>();
     	JSONObject abscisseConditionItem = new JSONObject();
@@ -125,7 +125,7 @@ public class APIController {
     	for (int i=0;i<abscisse_conditions.size();i++)
     	{
     		JSONObject abscisseConditem = new JSONObject();
-    		abscisseConditem.put("name",chart.getAbscisse());
+    		abscisseConditem.put("name",chart.getConfiguration().getAliasColonne());
     		abscisseConditem.put("valeur",abscisse_conditions.get(i).getValue());
     		abscisseConditem.put("operator",abscisse_conditions.get(i).getOperator());
            	abscisseConditionItemConditions.add(abscisseConditem);
@@ -139,14 +139,14 @@ public class APIController {
         	JSONObject groupByConditionItem = new JSONObject();
 
         	groupByitem.put("id",element.getId());
-        	groupByitem.put("title",element.getName());
+        	groupByitem.put("title",element.getConfiguration().getAliasColonne());
         	Gb_results.add(groupByitem);
         	groupByConditionItem.put("numberOfConditions",element.getConditions().size());
         	List<JSONObject>groupByConditionItemConditions= new ArrayList<JSONObject>();
         	for (int i=0;i<element.getConditions().size();i++)
         	{
             	JSONObject groupByConditem = new JSONObject();
-            	groupByConditem.put("name",element.getName());
+            	groupByConditem.put("name",element.getConfiguration().getAliasColonne());
             	groupByConditem.put("valeur",element.getConditions().get(i).getValue());
             	groupByConditem.put("operator",element.getConditions().get(i).getOperator());
                	groupByConditionItemConditions.add(groupByConditem);
@@ -156,12 +156,13 @@ public class APIController {
         	groupByConditionItem.put("conditions", groupByConditionItemConditions);
         	all_conditions.add(groupByConditionItem);
     	}
-    	System.out.println(all_conditions.get(0).get("conditions"));
+    	//System.out.println(all_conditions.get(0).get("conditions"));  
     	all_conditions.add(abscisseConditionItem);
     	result.put("abscisse",abscisse);
     	result.put("conditions", all_conditions);
     	result.put("ordonnee", Ordonnee_items);
     	result.put("GROUP BY",Gb_results);
+    	result.put("display",chart.getdisplayType());
 		return result.toString();
 		
 		
@@ -243,7 +244,9 @@ public class APIController {
 			JSONObject requestData = new JSONObject(json_array_data.get(1).toString()); 
 			Chart c = new Chart();
 			List <String>GroupByConditionnedItems=new ArrayList<String>();
-			c.setAbscisse(requestData.get("param1").toString());
+			Configuration config_associated = configDao.findByAliasColonne(requestData.get("param1").toString());
+			c.setConfiguration(config_associated);
+			//c.setAbscisse(requestData.get("param1").toString());
 			List <Ordonnée> OrdItems = new ArrayList<Ordonnée>();
 			TableRef tableofChart= tableDao.getByAliasTable(requestData.get("FROM").toString());
 			c.setTableReferenced(tableofChart);
@@ -251,10 +254,11 @@ public class APIController {
 			for (int i=0;i<requestData.getJSONArray("param2").length();i++)
 			{
 				Ordonnée ord = new Ordonnée();
-				ord.setName(requestData.getJSONArray("param2").getJSONObject(i).get("nom").toString());
+				Configuration ordConfig = configDao.findByAliasColonne(requestData.getJSONArray("param2").getJSONObject(i).get("nom").toString());
+				ord.setConfiguration(ordConfig);
 				ord.setMetrique(requestData.getJSONArray("param2").getJSONObject(i).get("metrique").toString());
 				OrdItems.add(ord);
-				ord.setChart(c);
+				ord.setChart(c);   
 			}
 			c.setOrdonnéeItems(OrdItems);
 			List <GroupBy> groupByList = new ArrayList<GroupBy>();
@@ -278,11 +282,16 @@ public class APIController {
 						
 					}
 					c.setConditions(conditions);
-					c.setAbscisse(ConditionItem.get("name").toString());
+					Configuration conf = configDao.findByAliasColonne(ConditionItem.get("name").toString());
+					c.setConfiguration(config_associated);
+					//c.setAbscisse(ConditionItem.get("name").toString());
 					break;  
 				case "GROUP BY":
 					GroupBy groupBy = new GroupBy();
-					groupBy.setName(ConditionItem.get("name").toString());
+					Configuration my_config= configDao.findByAliasColonne(ConditionItem.get("name").toString());
+					groupBy.setConfiguration(my_config);
+					groupBy.setChart(c);
+
 					GroupByConditionnedItems.add(ConditionItem.get("name").toString());
 					for (int j=0;j<ConditionItem.getJSONArray("conditions").length();j++)
 					{
@@ -303,7 +312,13 @@ public class APIController {
 			}
 			for (int i=0;i<requestData.getJSONArray("GroupBy").length();i++)
 				if (!GroupByConditionnedItems.contains(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString()))
-					groupByList.add(new GroupBy(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString()));
+				{
+					Configuration myConfig= configDao.findByAliasColonne(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString());
+					System.out.println(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString());
+					GroupBy GB_item = new GroupBy(myConfig);
+					GB_item.setChart(c);
+					groupByList.add(GB_item);
+				}
 
 			  
 			c.setGroupByItems(groupByList);
@@ -595,7 +610,7 @@ public class APIController {
 		        	jsonArray=jsonArraySortedFinal;
 		        	//System.out.println("jsonArraySortedFinal"+jsonArraySortedFinal);
 		        }
-		        if (display.equals(new String("line")) || display.equals(new String("area")) || display.equals(new String("stackv")))
+		        if (display.equals(new String("line")) || display.equals(new String("area")) || display.equals(new String("stackv")) || display.equals(new String("shbarchart")) )
 		        {
 		        	int i=0;
 		        	String X_FINALE = null;
@@ -685,7 +700,7 @@ public class APIController {
 					        	else 
 					        	xNext=(String) MyArrayItemNext.get(0); 
 				  			 }
-				  			
+				  			 
 				  		}
 				  		jsonObj.put("series",series);
 				  	//	System.out.println("jsonObj"+jsonObj);

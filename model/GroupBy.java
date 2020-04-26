@@ -21,19 +21,21 @@ public class GroupBy {
 		
 		
 	  @ManyToOne
-	  private Chart chart;
+	  private Chart chart; 
+	  
+		@ManyToOne
+		private Configuration configuration;
 	  
 	  
-	 String name;
+	 String name; 
 
-	 public GroupBy(String name) {
-			this.name = name;
+	 public GroupBy(Configuration configuration) {
+			this.configuration = configuration;
 		}
 
-	public GroupBy(int id, List<Condition> conditions, String name) {
+	public GroupBy(int id, List<Condition> conditions) {
 		this.id = id;
 		this.conditions = conditions;
-		this.name = name;
 	}
 
 
@@ -65,13 +67,15 @@ public class GroupBy {
 		this.chart = chart;
 	}
 
-	public String getName() {
-		return name;
+	public Configuration getConfiguration() {
+		return configuration;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setConfiguration(Configuration configuration) {
+		this.configuration = configuration;
 	}
+
+
 
 
 

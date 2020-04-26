@@ -24,8 +24,12 @@ public class Chart {
 	 private String reportName;
 	 private String reportDesc;
 	 private String gReport;
-	 private String abscisse;
+	// private String abscisse;
 	 
+	@ManyToOne
+	private Configuration configuration;
+		
+		
 	 private String displayType;
 	 
 	    @ManyToMany
@@ -64,18 +68,17 @@ public class Chart {
 	 
 	 public Chart() {}
 
-
-	public Chart(int id, String reportName, String reportDesc, String gReport, String abscisse, String displayType,
-			Set<DayNumber> dayNumbers, Set<WeekDays> weekDays, List<SpecificMail> specificMails,
-			List<GroupBy> groupByItems, List<Ordonnée> ordonnéeItems, List<Condition> conditions,
-			List<User> recipients, List<User> excepts, User proprietaire, TableRef tableReferenced,
-			String onSpecificDate) {
+	public Chart(int id, String reportName, String reportDesc, String gReport,
+			Configuration configuration, String displayType, Set<DayNumber> dayNumbers, Set<WeekDays> weekDays,
+			List<SpecificMail> specificMails, List<GroupBy> groupByItems, List<Ordonnée> ordonnéeItems,
+			List<Condition> conditions, List<User> recipients, List<User> excepts, User proprietaire,
+			TableRef tableReferenced, String onSpecificDate) {
 		super();
 		this.id = id;
 		this.reportName = reportName;
 		this.reportDesc = reportDesc;
 		this.gReport = gReport;
-		this.abscisse = abscisse;
+		this.configuration = configuration;
 		this.displayType = displayType;
 		this.dayNumbers = dayNumbers;
 		this.weekDays = weekDays;
@@ -89,9 +92,6 @@ public class Chart {
 		this.tableReferenced = tableReferenced;
 		this.onSpecificDate = onSpecificDate;
 	}
-
-
-
 
 
 
@@ -154,22 +154,6 @@ public class Chart {
 
 
 
-
-
-
-	public String getAbscisse() {
-		return abscisse;
-	}
-
-
-
-
-	public void setAbscisse(String abscisse) {
-		this.abscisse = abscisse;
-	}
-
-
-
 	public String getdisplayType() {
 		return displayType;
 	}
@@ -211,7 +195,7 @@ public class Chart {
 	public void setSpecificMails(List<SpecificMail> specificMails) {
 		this.specificMails = specificMails;
 	}
-
+ 
 
 
 
@@ -313,6 +297,16 @@ public class Chart {
 
 	public void setOnSpecificDate(String onSpecificDate) {
 		this.onSpecificDate = onSpecificDate;
+	}
+
+	
+
+	public Configuration getConfiguration() {
+		return configuration;
+	}
+
+	public void setConfiguration(Configuration configuration) {
+		this.configuration = configuration;
 	}
 
 
