@@ -8,4 +8,5 @@ import com.sofct.sofct.model.User;
 public interface UserDAO extends JpaRepository<User, Integer> {
 
 	User findByName(String name);
+	User findById(int id);
 }

@@ -31,22 +31,43 @@ public class SpecificMail {
 		this.email = email;
 	}
 
+
+
 	public int getId() {
 		return id;
 	}
+
+
 
 	public void setId(int id) {
 		this.id = id;
 	}
 
+
+
+	public Chart getChart() {
+		return chart;
+	}
+
+
+
+	public void setChart(Chart chart) {
+		this.chart = chart;
+	}
+
+
+
 	public String getEmail() {
 		return email;
 	}
 
+
+
 	public void setEmail(String email) {
 		this.email = email;
 	}
-	 
+
+
 	
 	 
 }

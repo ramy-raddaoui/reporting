@@ -91,6 +91,21 @@ public class APIController {
     Hashtable<String,String> confset = new Hashtable<String,String>();
     
     
+    @GetMapping("/get/users/all")
+    public List<User> getUserList()
+	{
+    	List<User> usersList=userDao.findAll();
+    	return usersList;
+	}
+    
+ 
+    @GetMapping("/get/weekdays/all")
+    public List<WeekDays> getWeekDaysAll()
+	{
+    	List<WeekDays> weekDaysList=weekDao.findAll();
+    	return weekDaysList;
+	}
+	
     @GetMapping("/get/chart/data/{id}")
     public String getChartsData(@PathVariable int id)
 	{
@@ -104,7 +119,7 @@ public class APIController {
     	List<Ordonnée> ordonnee=ordonnéeDao.getByChart(chart);
     	for (Ordonnée ordonnee_item : ordonnee) {
     		JSONObject ordonneItem = new JSONObject();
-    		ordonneItem.put("nom",ordonnee_item.getConfiguration().getNomColonne());
+    		ordonneItem.put("nom",ordonnee_item.getConfiguration().getAliasColonne());
     		ordonneItem.put("metrique",ordonnee_item.getMetrique());
     		Ordonnee_items.add(ordonneItem);
     	}
@@ -163,6 +178,7 @@ public class APIController {
     	result.put("ordonnee", Ordonnee_items);
     	result.put("GROUP BY",Gb_results);
     	result.put("display",chart.getdisplayType());
+    	result.put("id",chart.getId());
 		return result.toString();
 		
 		
@@ -300,7 +316,7 @@ public class APIController {
 						cond.setValue(ConditionItem.getJSONArray("conditions").getJSONObject(j).get("valeur").toString());
 						cond.setLogicCond(ConditionItem.get("logic").toString());
 						cond.setGroupBy(groupBy);
-						conditions.add(cond);
+						conditions.add(cond); 
 						
 					}
 					groupBy.setConditions(conditions);
@@ -319,7 +335,7 @@ public class APIController {
 					GB_item.setChart(c);
 					groupByList.add(GB_item);
 				}
-
+  
 			  
 			c.setGroupByItems(groupByList);
 			
@@ -331,7 +347,12 @@ public class APIController {
 			c.setdisplayType(requestData.getString("display"));
 			List<SpecificMail> listSpecificMails = new ArrayList<SpecificMail>();
 			for (int i=0;i<reportData.getJSONArray("emails").length();i++)
-				listSpecificMails.add(new SpecificMail(reportData.getJSONArray("emails").get(i).toString()));
+			{
+				SpecificMail specMail = new SpecificMail(reportData.getJSONArray("emails").get(i).toString());
+				specMail.setChart(c);
+				listSpecificMails.add(specMail);
+			}
+			
 			c.setSpecificMails(listSpecificMails);
 			switch (c.getgReport())
 			{
@@ -341,13 +362,13 @@ public class APIController {
 
 				for (int i=0;i<reportData.getJSONArray("gReportAdd").length();i++)
 				{
-					WeekDays wk = weekDao.findByName(reportData.getJSONArray("gReportAdd").get(i).toString());
+					WeekDays wk = weekDao.getOne((int)reportData.getJSONArray("gReportAdd").get(i));
 					listWeekDays.add(wk);
 				}
 				c.setWeekDays(listWeekDays);
 				User proprietaire = userDao.findByName("Rami Raddaoui");
 				c.setProprietaire(proprietaire); 
-				chartDao.save(c);break;
+				break;
 			case "Monthlybydate":
 		        Set<DayNumber> listDayNumbers = new HashSet<DayNumber>(); 
 		    	for (int i=0;i<reportData.getJSONArray("gReportAdd").length();i++)
@@ -359,7 +380,7 @@ public class APIController {
 				c.setDayNumbers(listDayNumbers);
 				User user = userDao.findByName("Rami Raddaoui");
 				c.setProprietaire(user); 
-				chartDao.save(c);break; 
+				break; 
 			case "Onaspecificdate":break;
 			  //  Date date1=new SimpleDateFormat("dd/MM/yyyy").parse(sDate1);  
 
@@ -367,13 +388,80 @@ public class APIController {
 			} 
 			
 				//c.addSpecificMails(new SpecificMail(reportData.getJSONArray("emails").get(i).toString()));
-			
-			System.out.println(reportData);
+			List<User> recipients = new ArrayList<User>();
+			for (int i=0;i<reportData.getJSONArray("recipients").length();i++)
+			{
+				User recipient= userDao.findById(reportData.getJSONArray("recipients").getInt(i));
+				if (recipient!=null)recipients.add(recipient);
+			}
+			c.setRecipients(recipients);
+			List<User> excepts = new ArrayList<User>();
+			for (int i=0;i<reportData.getJSONArray("excepts").length();i++)
+			{
+				User except= userDao.findById(reportData.getJSONArray("excepts").getInt(i));
+				if (except!=null)excepts.add(except);
+			}
+			c.setExcepts(excepts);
+			chartDao.save(c);
+			System.out.println(reportData.getJSONArray("recipients"));
 			return true;
 	    	
 	    }
 	   
-	   
+	   @GetMapping("/get/full/chart/data/{id}")
+	    public String getFullChartDataEditMode(@PathVariable int id)
+		{
+	    	JSONObject final_result = new JSONObject();
+		   try 
+		   {
+			 Chart chart = chartDao.getOne(id); 
+	    	
+	    	final_result.put("reportname",chart.getReportName());
+	    	final_result.put("reportdesc",chart.getReportDesc());
+	    	final_result.put("greport", chart.getgReport());
+	    	List<User> recipients = chart.getRecipients();
+	    //	List<Integer> recipients_IDs = new ArrayList<Integer>();
+ 
+
+	    	List<User> excepts = chart.getExcepts();
+	    //	List<Integer> excepts_IDs = new ArrayList<Integer>();
+	    	List<SpecificMail> emails = chart.getSpecificMails();
+	    /*	for (int i=0;i<recipients.size();i++)
+	    	{
+	    		recipients_IDs.add(recipients.get(i).getId());
+	    	}
+	    */
+	    	final_result.put("recipients", recipients);
+
+	    /*	for (int i=0;i<excepts.size();i++)
+	    	{
+	    		excepts_IDs.add(excepts.get(i).getId());
+	    	}
+	    */
+	    	final_result.put("excepts", excepts);	
+	    	JSONArray emailsArray = new JSONArray();
+	    	for (int i=0;i<emails.size();i++)
+	    	{
+	    		JSONObject mail = new JSONObject();
+	    		mail.put("id",emails.get(i).getId());
+	    		mail.put("email", emails.get(i).getEmail());
+	    		emailsArray.put(mail);
+	    	}
+	    	final_result.put("emails", emailsArray);
+	    	
+	    	switch (chart.getgReport())
+	    	{
+			case "Weekly": 
+				final_result.put("gReportAdd", chart.getWeekDays().toArray());break;
+			case "Monthlybydate":final_result.put("gReportAdd", chart.getDayNumbers().toArray());break;
+			default: break;
+
+	    	}
+		   }
+		   catch(Exception e) {return "";}
+	    	//final_result.put("gReportAdd", chart.getgReport());
+	    	return final_result.toString();
+		}
 	@PostMapping("/pieandhistchart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
 		/*Hashtable<String,String> h = new Hashtable<String,String>(); 
@@ -385,7 +473,7 @@ public class APIController {
 		h.put("Rémunération finale","final_payment_value");
 		h.put("boutique","interv_dse_name");
 		h.put("debut_période","start_period");
-		h.put("fin_période","end_period");
+		h.put("fin_période","end_period"); 
 		*/
 		//JSONArray my_array = data.getJSONArray("param2");
 		//System.out.println("This is first step "+data);
