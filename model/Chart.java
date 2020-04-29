@@ -14,6 +14,9 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.Size;
 
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
+
 @Entity
 public class Chart {
 	
@@ -37,21 +40,21 @@ public class Chart {
 	     
 	    @ManyToMany
 	    Set<WeekDays> weekDays;
-	    
-		@OneToMany(cascade = CascadeType.PERSIST, mappedBy = "chart")
+	    //il faut traiter cet attribut
+		@OneToMany(cascade = {CascadeType.ALL}, orphanRemoval=true, mappedBy = "chart")
 		private List<SpecificMail> specificMails;
 		
-		@OneToMany(cascade = CascadeType.PERSIST, mappedBy = "chart")
+		@OneToMany(cascade = {CascadeType.ALL}, orphanRemoval=true, mappedBy = "chart")
 		private List<GroupBy> GroupByItems;
 		
-		@OneToMany(cascade = CascadeType.PERSIST, mappedBy = "chart")
-		private List<Ordonnée> OrdonnéeItems;
+		@OneToMany(cascade = {CascadeType.ALL}, orphanRemoval=true, mappedBy = "chart")
+		private Set<Ordonnee> OrdonnéeItems;
 		
-		@OneToMany(cascade = CascadeType.ALL, mappedBy = "chart")
+		@OneToMany(cascade = {CascadeType.ALL}, orphanRemoval=true, mappedBy = "chart")
 		private List<Condition> conditions;
 		
 
-	    
+	     
 	 @ManyToMany 
 	 private List<User> recipients;
 	 
@@ -70,7 +73,7 @@ public class Chart {
 
 	public Chart(int id, String reportName, String reportDesc, String gReport,
 			Configuration configuration, String displayType, Set<DayNumber> dayNumbers, Set<WeekDays> weekDays,
-			List<SpecificMail> specificMails, List<GroupBy> groupByItems, List<Ordonnée> ordonnéeItems,
+			List<SpecificMail> specificMails, List<GroupBy> groupByItems, Set<Ordonnee> ordonnéeItems,
 			List<Condition> conditions, List<User> recipients, List<User> excepts, User proprietaire,
 			TableRef tableReferenced, String onSpecificDate) {
 		super();
@@ -101,7 +104,7 @@ public class Chart {
 
 
 
-
+ 
 
 	public void setId(int id) {
 		this.id = id;
@@ -214,13 +217,18 @@ public class Chart {
 
 
 
-	public List<Ordonnée> getOrdonnéeItems() {
+	public Set<Ordonnee> getOrdonnéeItems() {
 		return OrdonnéeItems;
 	}
 
 
 
-	public void setOrdonnéeItems(List<Ordonnée> ordonnéeItems) {
+	public void setOrdonnéeItems(Set<Ordonnee> ordonnéeItems) {
+		/* this.OrdonnéeItems.clear();
+		  this.OrdonnéeItems.addAll(ordonnéeItems);
+		   for (Ordonnee child: OrdonnéeItems)
+		        child.setChart(this);
+		*/
 		OrdonnéeItems = ordonnéeItems;
 	}
 

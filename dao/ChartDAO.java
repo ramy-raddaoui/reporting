@@ -17,6 +17,7 @@ public interface ChartDAO extends JpaRepository<Chart, Integer> {
 	@Query("select id,reportName,reportDesc from Chart where proprietaire = :prop AND tableReferenced=(select id from TableRef where aliasTable=:alias)")
 	List<List<String>> findProprietaireCharts(@Param("prop") User utilisateur,@Param("alias") String alias);
 
+	Chart findById(int id);
 	
 }
  

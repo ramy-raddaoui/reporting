@@ -9,6 +9,9 @@ import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 @Entity
 public class GroupBy {
 
@@ -16,20 +19,21 @@ public class GroupBy {
      @GeneratedValue
 	  private int id;
 	 
-	@OneToMany(cascade = {CascadeType.ALL})
+	@OneToMany(cascade = {CascadeType.ALL}, orphanRemoval=true)
 	private List<Condition> conditions;
 		
-		
+		 
 	  @ManyToOne
+	  @OnDelete(action = OnDeleteAction.CASCADE)
 	  private Chart chart; 
 	  
 		@ManyToOne
 		private Configuration configuration;
+	    
 	  
-	  
-	 String name; 
+	 String name;   
 
-	 public GroupBy(Configuration configuration) {
+	 public GroupBy(Configuration configuration) { 
 			this.configuration = configuration;
 		}
 
@@ -77,6 +81,6 @@ public class GroupBy {
 
 
 
-
+ 
 
 }

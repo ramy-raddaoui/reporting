@@ -6,10 +6,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.sofct.sofct.model.Chart;
 import com.sofct.sofct.model.DayNumber;
-import com.sofct.sofct.model.Ordonnée;
+import com.sofct.sofct.model.Ordonnee;
 
-public interface OrdonnéeDAO extends JpaRepository<Ordonnée, Integer> {
+public interface OrdonnéeDAO extends JpaRepository<Ordonnee, Integer> {
 
-	List<Ordonnée> getByChart(Chart chart);
+	List<Ordonnee> getByChart(Chart chart);
 
 }

@@ -5,14 +5,18 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 @Entity
-public class Ordonnée {
+public class Ordonnee {
 
 	 @Id
      @GeneratedValue
 	  private int id;
 	 
 	  @ManyToOne
+	  @OnDelete(action = OnDeleteAction.CASCADE)
 	  private Chart chart;
 	 
 	  @ManyToOne
@@ -20,13 +24,13 @@ public class Ordonnée {
 	  
 	 String metrique;
 
-	public Ordonnée(int id, Chart chart, Configuration configuration, String metrique) {
+	public Ordonnee(int id, Chart chart, Configuration configuration, String metrique) {
 		this.id = id;
 		this.chart = chart;
 		this.configuration = configuration;
 		this.metrique = metrique;
 	}
-	public Ordonnée() {
+	public Ordonnee() {
 		// TODO Auto-generated constructor stub
 	}
 	public int getId() {

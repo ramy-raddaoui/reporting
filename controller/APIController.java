@@ -1,6 +1,7 @@
 package com.sofct.sofct.controller;
 import org.apache.http.HttpResponse;
 
+
 import com.sofct.sofct.dao.ChartDAO;
 import com.sofct.sofct.dao.ConfigurationDAO;
 import com.sofct.sofct.dao.DayNumberDAO;
@@ -8,6 +9,7 @@ import com.sofct.sofct.dao.OrdonnéeDAO;
 import com.sofct.sofct.dao.TableRefDAO;
 import com.sofct.sofct.dao.UserDAO;
 import com.sofct.sofct.dao.WeekDaysDAO;
+import com.sofct.sofct.exceptions.ChartNotFoundException;
 import com.sofct.sofct.model.*;
 
 import org.apache.http.client.ClientProtocolException;
@@ -33,11 +35,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.springframework.transaction.annotation.Transactional;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -116,8 +122,8 @@ public class APIController {
     	List<GroupBy> groupBy_Items = chart.getGroupByItems();
     	JSONObject abscisse = new JSONObject();
     	List<JSONObject> Ordonnee_items = new ArrayList<JSONObject>();
-    	List<Ordonnée> ordonnee=ordonnéeDao.getByChart(chart);
-    	for (Ordonnée ordonnee_item : ordonnee) {
+    	List<Ordonnee> ordonnee=ordonnéeDao.getByChart(chart);
+    	for (Ordonnee ordonnee_item : ordonnee) {
     		JSONObject ordonneItem = new JSONObject();
     		ordonneItem.put("nom",ordonnee_item.getConfiguration().getAliasColonne());
     		ordonneItem.put("metrique",ordonnee_item.getMetrique());
@@ -136,7 +142,7 @@ public class APIController {
         		abscisseConditionItem.put("logic",abscisse_conditions.get(0).getLogicCond());
         		abscisseConditionItem.put("numberOfConditions", abscisse_conditions.size());
 	
-    		}
+    		
     	for (int i=0;i<abscisse_conditions.size();i++)
     	{
     		JSONObject abscisseConditem = new JSONObject();
@@ -146,7 +152,8 @@ public class APIController {
            	abscisseConditionItemConditions.add(abscisseConditem);
     	}
     	abscisseConditionItem.put("conditions", abscisseConditionItemConditions);
-  
+    	all_conditions.add(abscisseConditionItem);
+    		}
     	//return abscisseConditionItem.toString(); 
  
     	for (GroupBy element : groupBy_Items) {
@@ -156,6 +163,8 @@ public class APIController {
         	groupByitem.put("id",element.getId());
         	groupByitem.put("title",element.getConfiguration().getAliasColonne());
         	Gb_results.add(groupByitem);
+        	if (element.getConditions().size()!=0)
+        	{
         	groupByConditionItem.put("numberOfConditions",element.getConditions().size());
         	List<JSONObject>groupByConditionItemConditions= new ArrayList<JSONObject>();
         	for (int i=0;i<element.getConditions().size();i++)
@@ -170,15 +179,17 @@ public class APIController {
               }
         	groupByConditionItem.put("conditions", groupByConditionItemConditions);
         	all_conditions.add(groupByConditionItem);
-    	}
+        	}
+        }
     	//System.out.println(all_conditions.get(0).get("conditions"));  
-    	all_conditions.add(abscisseConditionItem);
+    	
     	result.put("abscisse",abscisse);
     	result.put("conditions", all_conditions);
     	result.put("ordonnee", Ordonnee_items);
     	result.put("GROUP BY",Gb_results);
     	result.put("display",chart.getdisplayType());
     	result.put("id",chart.getId());
+    	System.out.println("all_conditions"+all_conditions.toString());
 		return result.toString();
 		
 		
@@ -214,9 +225,16 @@ public class APIController {
     	  
 		 //return ma_configuration;
     	return ma_configuration ;
-	}  
+	}
+    
+	@DeleteMapping(value = "/chart/delete/{id}")
+    public boolean delete_chart(@PathVariable int id)
+    {
+    	chartDao.deleteById(id);
+    	return true;
+    }
 
-	public boolean delete_chart(int id)
+	public boolean delete_chart_from_metabase(int id)
 	{
  
 		String resultat = "";
@@ -251,32 +269,58 @@ public class APIController {
 
 	}
 	
-	   @PostMapping("/savechart")
-	    public boolean saveChart(@RequestBody String data)
-	    {
+
+	   //@Transactional(rollbackFor={Exception.class})
+	   @PostMapping("/savechart/{id}")
+	    public boolean saveChart(@RequestBody String data,@PathVariable int id)
+	    { 
+		   this.getConfigurationByAlias("Commission par entite");
+		   Chart c = new Chart();
+		  if (id!=0)
+		  {
+			c=chartDao.findById(id); 
+			if(c==null)return false;
+		  }
+		   //		catch(DataAccessException  e) {System.out.println("Exception occured");return false;}
+	
 			JSONObject json_object = new JSONObject(data); 
 			JSONArray json_array_data= new JSONArray(json_object.get("data").toString());
 			JSONObject reportData = new JSONObject(json_array_data.get(0).toString()); 
 			JSONObject requestData = new JSONObject(json_array_data.get(1).toString()); 
-			Chart c = new Chart();
+			//Chart c = new Chart();
 			List <String>GroupByConditionnedItems=new ArrayList<String>();
 			Configuration config_associated = configDao.findByAliasColonne(requestData.get("param1").toString());
 			c.setConfiguration(config_associated);
 			//c.setAbscisse(requestData.get("param1").toString());
-			List <Ordonnée> OrdItems = new ArrayList<Ordonnée>();
-			TableRef tableofChart= tableDao.getByAliasTable(requestData.get("FROM").toString());
-			c.setTableReferenced(tableofChart);
-			System.out.println(c.getTableReferenced().getAliasTable());
+			Set <Ordonnee> OrdItems = new HashSet<>();
+		 	TableRef tableofChart= tableDao.getByAliasTable(requestData.get("FROM").toString());
+			c.setTableReferenced(tableofChart); 
+			//System.out.println(c.getTableReferenced().getAliasTable());
 			for (int i=0;i<requestData.getJSONArray("param2").length();i++)
-			{
-				Ordonnée ord = new Ordonnée();
+			{  
+				Ordonnee ord = new Ordonnee();
 				Configuration ordConfig = configDao.findByAliasColonne(requestData.getJSONArray("param2").getJSONObject(i).get("nom").toString());
 				ord.setConfiguration(ordConfig);
 				ord.setMetrique(requestData.getJSONArray("param2").getJSONObject(i).get("metrique").toString());
-				OrdItems.add(ord);
-				ord.setChart(c);   
+				ord.setChart(c);
+				OrdItems.add(ord); 
+			} 
+			/*System.out.println("sizeee"+c.getOrdonnéeItems().size());
+		    for (Iterator<Ordonnee> ord = c.getOrdonnéeItems().iterator(); ord.hasNext(); ) {
+		        Ordonnee f = ord.next();
+		  System.out.println("metrique"+f.getMetrique());
+		    }
+		    */
+			  if (id!=0) {c.getOrdonnéeItems().clear();c.getOrdonnéeItems().addAll(OrdItems);}else c.setOrdonnéeItems(OrdItems);
+	
+			//c.setOrdonnéeItems(OrdItems);
+		/*	for (int i=0;i<c.getOrdonnéeItems().size();i++)
+			{
+				System.out.println(c.getOrdonnéeItems()..get(i).getChart().getId());
 			}
-			c.setOrdonnéeItems(OrdItems);
+			*/
+			
+			//System.out.println()
 			List <GroupBy> groupByList = new ArrayList<GroupBy>();
 			if (requestData.has("where"))
 			for (int i=0;i<requestData.getJSONArray("where").length();i++)
@@ -284,8 +328,8 @@ public class APIController {
 				JSONObject ConditionItem =requestData.getJSONArray("where").getJSONObject(i);
 				List <Condition> conditions = new ArrayList<Condition>();
 				switch(ConditionItem.get("location").toString())
-				{
-				case "Abscisse":
+				{ 
+				case "Abscisse": 
 					 
 					for (int j=0;j<ConditionItem.getJSONArray("conditions").length();j++)
 					{
@@ -297,7 +341,9 @@ public class APIController {
 						conditions.add(cond);
 						
 					}
-					c.setConditions(conditions);
+					//c.setConditions(conditions);
+					 if (id!=0 && c.getConditions()!=null) {c.getConditions().clear();c.getConditions().addAll(conditions);}else c.setConditions(conditions);
+			
 					Configuration conf = configDao.findByAliasColonne(ConditionItem.get("name").toString());
 					c.setConfiguration(config_associated);
 					//c.setAbscisse(ConditionItem.get("name").toString());
@@ -319,7 +365,11 @@ public class APIController {
 						conditions.add(cond); 
 						
 					}
-					groupBy.setConditions(conditions);
+
+					 if (id!=0 && groupBy.getConditions()!=null) {groupBy.getConditions().clear();groupBy.getConditions().addAll(conditions);}
+					 else groupBy.setConditions(conditions);
+					 
+					//groupBy.setConditions(conditions);
 					groupBy.setChart(c);
 					groupByList.add(groupBy);break;
 					  
@@ -330,16 +380,16 @@ public class APIController {
 				if (!GroupByConditionnedItems.contains(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString()))
 				{
 					Configuration myConfig= configDao.findByAliasColonne(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString());
-					System.out.println(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString());
+					//System.out.println(requestData.getJSONArray("GroupBy").getJSONObject(i).get("nom").toString());
 					GroupBy GB_item = new GroupBy(myConfig);
 					GB_item.setChart(c);
 					groupByList.add(GB_item);
 				}
-  
-			  
-			c.setGroupByItems(groupByList);
+			if (id!=0 && c.getGroupByItems()!=null) {c.getGroupByItems().clear();c.getGroupByItems().addAll(groupByList);}else c.setGroupByItems(groupByList);
+
+			//c.setGroupByItems(groupByList);
 			
-			System.out.println(requestData);
+			//System.out.println(requestData);
 			//c.setDataRequest(requestData.toString());
 			c.setReportDesc(reportData.getString("reportdesc"));
 			c.setReportName(reportData.getString("reportname"));
@@ -352,8 +402,9 @@ public class APIController {
 				specMail.setChart(c);
 				listSpecificMails.add(specMail);
 			}
-			
-			c.setSpecificMails(listSpecificMails);
+			if (id!=0 && c.getSpecificMails()!=null) {c.getSpecificMails().clear();c.getSpecificMails().addAll(listSpecificMails);}else c.setSpecificMails(listSpecificMails);
+
+			//c.setSpecificMails(listSpecificMails);
 			switch (c.getgReport())
 			{
 			case "Weekly": 	
@@ -366,7 +417,7 @@ public class APIController {
 					listWeekDays.add(wk);
 				}
 				c.setWeekDays(listWeekDays);
-				User proprietaire = userDao.findByName("Rami Raddaoui");
+				User proprietaire = userDao.findById(1);
 				c.setProprietaire(proprietaire); 
 				break;
 			case "Monthlybydate":
@@ -377,13 +428,15 @@ public class APIController {
 					DayNumber dNumber = dayNumberDao.findByDayNum(Integer.parseInt(reportData.getJSONArray("gReportAdd").get(i).toString()));
 					listDayNumbers.add(dNumber);
 				}
-				c.setDayNumbers(listDayNumbers);
-				User user = userDao.findByName("Rami Raddaoui");
+		    	if (id!=0 && c.getDayNumbers()!=null) {c.getDayNumbers().clear();c.getDayNumbers().addAll(listDayNumbers);}else c.setDayNumbers(listDayNumbers);
+	
+				//c.setDayNumbers(listDayNumbers);
+				User user = userDao.findById(1);
 				c.setProprietaire(user); 
-				break; 
+				break;  
 			case "Onaspecificdate":break;
 			  //  Date date1=new SimpleDateFormat("dd/MM/yyyy").parse(sDate1);  
-
+ 
 					//listWeekDays.add(new listWeekDays (reportData.getJSONArray("gReportAdd").get(i).toString()))
 			} 
 			
@@ -394,16 +447,20 @@ public class APIController {
 				User recipient= userDao.findById(reportData.getJSONArray("recipients").getInt(i));
 				if (recipient!=null)recipients.add(recipient);
 			}
-			c.setRecipients(recipients);
+			if (id!=0 && c.getRecipients()!=null) {c.getRecipients().clear();c.getRecipients().addAll(recipients);}else c.setRecipients(recipients);
+			
+			//c.setRecipients(recipients);
 			List<User> excepts = new ArrayList<User>();
 			for (int i=0;i<reportData.getJSONArray("excepts").length();i++)
 			{
 				User except= userDao.findById(reportData.getJSONArray("excepts").getInt(i));
 				if (except!=null)excepts.add(except);
 			}
-			c.setExcepts(excepts);
+			if (id!=0 && c.getExcepts()!=null) {c.getExcepts().clear();c.getExcepts().addAll(excepts);}else c.setExcepts(excepts);
+		
+			//c.setExcepts(excepts);
 			chartDao.save(c);
-			System.out.println(reportData.getJSONArray("recipients"));
+			//System.out.println(reportData.getJSONArray("recipients"));
 			return true;
 	    	
 	    }
@@ -420,26 +477,14 @@ public class APIController {
 	    	final_result.put("reportdesc",chart.getReportDesc());
 	    	final_result.put("greport", chart.getgReport());
 	    	List<User> recipients = chart.getRecipients();
-	    //	List<Integer> recipients_IDs = new ArrayList<Integer>();
- 
-
 	    	List<User> excepts = chart.getExcepts();
-	    //	List<Integer> excepts_IDs = new ArrayList<Integer>();
 	    	List<SpecificMail> emails = chart.getSpecificMails();
-	    /*	for (int i=0;i<recipients.size();i++)
-	    	{
-	    		recipients_IDs.add(recipients.get(i).getId());
-	    	}
-	    */
+
 	    	final_result.put("recipients", recipients);
 
-	    /*	for (int i=0;i<excepts.size();i++)
-	    	{
-	    		excepts_IDs.add(excepts.get(i).getId());
-	    	}
-	    */
-	    	final_result.put("excepts", excepts);	
-	    	JSONArray emailsArray = new JSONArray();
+
+	    	final_result.put("excepts", excepts);	 
+	    	JSONArray emailsArray = new JSONArray();    
 	    	for (int i=0;i<emails.size();i++)
 	    	{
 	    		JSONObject mail = new JSONObject();
