@@ -96,6 +96,7 @@ public class APIController {
     
     Hashtable<String,String> confset = new Hashtable<String,String>();
     
+
     
     @GetMapping("/get/users/all")
     public List<User> getUserList()
@@ -270,7 +271,7 @@ public class APIController {
 	}
 	
 
-	   //@Transactional(rollbackFor={Exception.class})
+    
 	   @PostMapping("/savechart/{id}")
 	    public boolean saveChart(@RequestBody String data,@PathVariable int id)
 	    { 
@@ -507,6 +508,30 @@ public class APIController {
 	    	//final_result.put("gReportAdd", chart.getgReport());
 	    	return final_result.toString();
 		}
+	   
+		
+
+	    
+	    public String getWhereClauseInjection(String name,String operator,String value)
+	    {
+	    	String resultat=name+" ";
+	    	switch (operator)
+	    	{
+	    	case "equal": resultat+="='"+value+"'";break;
+	    	case ">": resultat+=operator+"'"+value+"'";break;
+	    	case ">=":resultat+=operator+"'"+value+"'";break;
+	    	case "<":resultat+=operator+"'"+value+"'";break;
+	    	case "<=":resultat+=operator+"'"+value+"'";break;
+	    	case "contains":resultat+=" LIKE '%"+value+"%'";break;
+	    	case "not contains":resultat+="NOT LIKE '%"+value+"%'";break;
+	    	case "begins with":resultat+="LIKE '"+value+"%'";break;
+	    	case "not begins with":resultat+="NOT LIKE '"+value+"%'";break;
+	    	case "ends with":resultat+="LIKE '%"+value+"'";break;
+	    	case "not ends with":resultat+="NOT LIKE '%"+value+"'";break;
+	    	
+	    	}
+	    	return resultat;
+	    }
 	@PostMapping("/pieandhistchart")
 	public String PiechartSofctwithCustomized_Request(@RequestBody String data) {
 		/*Hashtable<String,String> h = new Hashtable<String,String>(); 
@@ -531,6 +556,31 @@ public class APIController {
 		JSONArray GroupByElements = json_object1.getJSONArray("GroupBy");
 		JSONArray periodElements = json_object1.getJSONArray("period");
 
+
+		String clauseWhere="";
+		if(json_object1.has("where"))
+		{
+		JSONArray WhereElements = json_object1.getJSONArray("where");
+		 for (int i=0;i<WhereElements.length();i++)
+		 {
+			 String itemWhereClauseResult=" AND (";
+			 JSONObject JSONConditionItem = new JSONObject(WhereElements.getJSONObject(i).toString());
+			 String name=confset.get(JSONConditionItem.getString("name"));
+			 String logic_operator=JSONConditionItem.getString("logic");
+			 for (int j=0;j<JSONConditionItem.getJSONArray("conditions").length();j++)
+			 {
+				 JSONObject CondDetail=JSONConditionItem.getJSONArray("conditions").getJSONObject(j);
+				 String operator=CondDetail.getString("operator");
+				 String valeur=CondDetail.getString("valeur");
+				 itemWhereClauseResult+=" "+this.getWhereClauseInjection(name, operator, valeur)+" ";
+				 itemWhereClauseResult+= (j!=JSONConditionItem.getJSONArray("conditions").length()-1)? logic_operator : "";
+			 }
+			 itemWhereClauseResult+=")";
+			 clauseWhere+=itemWhereClauseResult;
+		
+		 }
+		}
+		 System.out.println("clauseWhere"+clauseWhere);
 	//	String seuil= json_object1.getString("seuil");
 
 		String query="SELECT "+confset.get(param1)+" AS "+param1.replaceAll(" ","_");
@@ -566,7 +616,7 @@ public class APIController {
   		} 
 		  if (display.equals(new String("area"))==true || display.equals(new String("line"))==true)
 		    Order_By_Elements=last_GB;
-		    query+=" FROM "+confset.get(json_object1.getString("FROM"))+" WHERE "+confset.get(param1)+" IS NOT NULL "+GB_WHERE;
+		    query+=" FROM "+confset.get(json_object1.getString("FROM"))+" WHERE "+confset.get(param1)+" IS NOT NULL "+GB_WHERE+clauseWhere;
 		    if (periodElements.length()!=0)
 		    {
 		    JSONObject JSONObjItem_period_debut = new JSONObject(periodElements.getJSONObject(0).toString());
@@ -653,8 +703,9 @@ public class APIController {
 		  		return resultat_final;
 			}
     
-	
-//	@GetMapping("/test/sofct/params/{seuil}")
+
+    
+     
 	public JSONArray PiechartSofctwithParamsnew(int id,String display,JSONArray param2)
 	{
 	        
